@@ -5,16 +5,16 @@ Represents an e-commerce transaction in the Ice Stream system.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class Transaction:
     """Represents a single e-commerce transaction.
-    
+
     This is the canonical data model for transactions flowing through
     Ice Stream. All fields are immutable after creation.
-    
+
     Attributes:
         event_id: Unique identifier for this event
         event_time: When the transaction occurred (UTC)
@@ -72,7 +72,7 @@ class Transaction:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert transaction to dictionary.
-        
+
         Returns:
             Dictionary representation of the transaction
         """
@@ -95,13 +95,13 @@ class Transaction:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Transaction":
         """Create a transaction from a dictionary.
-        
+
         Args:
             data: Dictionary with transaction fields
-        
+
         Returns:
             Transaction instance
-        
+
         Raises:
             ValueError: If required fields are missing or invalid
             TypeError: If field types are incorrect
@@ -111,7 +111,7 @@ class Transaction:
             event_time = data.get("event_time")
             if isinstance(event_time, str):
                 event_time = datetime.fromisoformat(event_time.replace("Z", "+00:00"))
-            
+
             return cls(
                 event_id=data["event_id"],
                 event_time=event_time,

@@ -5,13 +5,13 @@ Represents an invalid event that has been quarantined with failure details.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class QuarantineRecord:
     """Record of an event that failed validation and was quarantined.
-    
+
     Attributes:
         event_id: ID of the quarantined event
         received_at: When the event was received
@@ -33,12 +33,12 @@ class QuarantineRecord:
     error_messages: list[str]
     quarantine_reason: str
     recoverable: bool = True
-    schema_version: Optional[str] = None
-    source: Optional[str] = None
+    schema_version: str | None = None
+    source: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert quarantine record to dictionary.
-        
+
         Returns:
             Dictionary representation
         """
@@ -58,17 +58,17 @@ class QuarantineRecord:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "QuarantineRecord":
         """Create a quarantine record from a dictionary.
-        
+
         Args:
             data: Dictionary with quarantine record fields
-        
+
         Returns:
             QuarantineRecord instance
         """
         received_at = data.get("received_at")
         if isinstance(received_at, str):
             received_at = datetime.fromisoformat(received_at.replace("Z", "+00:00"))
-        
+
         return cls(
             event_id=data["event_id"],
             received_at=received_at,

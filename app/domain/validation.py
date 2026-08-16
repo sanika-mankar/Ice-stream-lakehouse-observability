@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 @dataclass
 class ValidationResult:
     """Result of validating a transaction.
-    
+
     Attributes:
         is_valid: Whether the transaction passed all validations
         errors: List of error messages for failed validations
@@ -28,7 +28,7 @@ class ValidationResult:
 
     def add_error(self, message: str, rule_id: str) -> None:
         """Add an error to the validation result.
-        
+
         Args:
             message: Error message
             rule_id: Rule ID that failed (e.g., DQ-001)
@@ -40,7 +40,7 @@ class ValidationResult:
 
     def add_warning(self, message: str) -> None:
         """Add a warning to the validation result.
-        
+
         Args:
             message: Warning message
         """
@@ -48,7 +48,7 @@ class ValidationResult:
 
     def to_dict(self) -> dict:
         """Convert validation result to dictionary.
-        
+
         Returns:
             Dictionary representation
         """

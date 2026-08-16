@@ -6,7 +6,7 @@ import pytest
 @pytest.fixture
 def sample_transaction() -> dict:
     """Provide a valid sample transaction for testing.
-    
+
     Returns:
         Dictionary representing a valid transaction
     """

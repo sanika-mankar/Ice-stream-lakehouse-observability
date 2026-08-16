@@ -5,19 +5,17 @@ Provides structured logging with correlation IDs for request tracking.
 
 import logging
 import logging.config
-from typing import Any, Optional
-import sys
 
 from app.config import settings
 
 
-def setup_logging(log_level: Optional[str] = None) -> logging.Logger:
+def setup_logging(log_level: str | None = None) -> logging.Logger:
     """Set up structured logging for the application.
-    
+
     Args:
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
                   Defaults to settings.log_level
-    
+
     Returns:
         Configured logger instance
     """
@@ -63,10 +61,10 @@ def setup_logging(log_level: Optional[str] = None) -> logging.Logger:
 
 def get_logger(name: str) -> logging.Logger:
     """Get a logger with the given name.
-    
+
     Args:
         name: Logger name, typically __name__
-    
+
     Returns:
         Logger instance
     """
@@ -76,21 +74,21 @@ def get_logger(name: str) -> logging.Logger:
 class CorrelationIDFilter(logging.Filter):
     """Add correlation ID to log records for tracing."""
 
-    _correlation_id: Optional[str] = None
+    _correlation_id: str | None = None
 
     @classmethod
     def set_correlation_id(cls, correlation_id: str) -> None:
         """Set the correlation ID for this thread/request.
-        
+
         Args:
             correlation_id: Unique identifier for this request
         """
         cls._correlation_id = correlation_id
 
     @classmethod
-    def get_correlation_id(cls) -> Optional[str]:
+    def get_correlation_id(cls) -> str | None:
         """Get the current correlation ID.
-        
+
         Returns:
             Current correlation ID or None
         """
@@ -98,10 +96,10 @@ class CorrelationIDFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Add correlation ID to log record.
-        
+
         Args:
             record: Log record to filter
-        
+
         Returns:
             Always True to allow the record
         """

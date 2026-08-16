@@ -5,13 +5,12 @@ Provides typed, environment-driven configuration with Pydantic.
 
 from dataclasses import dataclass
 from os import getenv
-from typing import Optional
 
 
 @dataclass
 class Settings:
     """Application configuration.
-    
+
     All settings are loaded from environment variables with sensible defaults.
     Use .env.example as a template for your .env file.
     """
@@ -67,7 +66,7 @@ class Settings:
 
     def is_production(self) -> bool:
         """Check if running in production mode.
-        
+
         Returns:
             True if APP_ENV is production
         """
@@ -75,7 +74,7 @@ class Settings:
 
     def is_development(self) -> bool:
         """Check if running in development mode.
-        
+
         Returns:
             True if APP_ENV is development
         """
