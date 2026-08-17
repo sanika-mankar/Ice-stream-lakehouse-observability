@@ -27,9 +27,7 @@ def setup_logging(log_level: str | None = None) -> logging.Logger:
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "standard": {
-                "format": "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
-            },
+            "standard": {"format": "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"},
             "json": {
                 "format": '{"timestamp": "%(asctime)s", "name": "%(name)s", '
                 '"level": "%(levelname)s", "message": "%(message)s"}'
