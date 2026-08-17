@@ -1,0 +1,79 @@
+# Python and Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Data and Artifacts
+data/raw/
+data/clean/
+data/quarantine/
+*.duckdb
+*.db
+*.sqlite
+*.log
+logs/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Generated Files
+.mypy_cache/
+.dmypy.json
+dmypy.json
