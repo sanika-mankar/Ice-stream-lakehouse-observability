@@ -30,7 +30,7 @@ class ValidationEngine:
             ValidationResult containing the outcome and any errors
         """
         validators = self.registry.get_all()
-        
+
         # Initialize result
         result = ValidationResult(
             is_valid=True,
@@ -44,8 +44,7 @@ class ValidationEngine:
                 validator.validate(data, result)
             except Exception as e:
                 result.add_error(
-                    message=f"Validator crashed: {str(e)}", 
-                    rule_id=f"{validator.rule_id}-CRASH"
+                    message=f"Validator crashed: {str(e)}", rule_id=f"{validator.rule_id}-CRASH"
                 )
 
         return result
