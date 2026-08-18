@@ -59,6 +59,55 @@ export interface Pipeline {
   status: SystemStatus;
 }
 
+export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type IncidentStatus = 'OPEN' | 'INVESTIGATING' | 'MITIGATING' | 'RECOVERING' | 'RESOLVED';
+
+export interface Incident {
+  id: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  startedAt: string;
+  resolvedAt?: string;
+  duration?: string;
+  errorRate: number;
+  threshold: number;
+  affectedComponent: string;
+  rootCause: string;
+  description: string;
+}
+
+export interface QualityRule {
+  id: string;
+  name: string;
+  description: string;
+  severity: 'warning' | 'error' | 'critical';
+  threshold: string;
+  status: 'active' | 'disabled';
+  violationCount: number;
+}
+
+export interface QuarantineRecord {
+  id: string;
+  timestamp: string;
+  eventId: string;
+  transactionId: string;
+  ruleId: string;
+  field: string;
+  expected: string;
+  actual: string;
+  source: string;
+  schemaVersion: string;
+  severity: 'warning' | 'error' | 'critical';
+}
+
+export interface IcebergSnapshot {
+  id: string;
+  timestamp: string;
+  records: number;
+  operation: 'append' | 'overwrite' | 'delete' | 'replace';
+  summary: string;
+}
+
 export interface ActivityEvent {
   id: string;
   timestamp: string;
