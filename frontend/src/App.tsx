@@ -1,10 +1,11 @@
-﻿
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import QualityPage from "./pages/QualityPage";
 import SystemPage from "./pages/SystemPage";
+import PipelinePage from "./pages/PipelinePage";
 import { useStore } from "./lib/store/useStore";
 
 function App() {
@@ -23,7 +24,7 @@ function App() {
         <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Navigate to="/overview" replace />} />
           <Route path="overview" element={<DashboardPage />} />
-          <Route path="pipeline/*" element={<div className="p-8">Pipeline (WIP)</div>} />
+          <Route path="pipeline/*" element={<PipelinePage />} />
           <Route path="quality/*" element={<QualityPage />} />
           <Route path="reliability/*" element={<div className="p-8">Reliability (WIP)</div>} />
           <Route path="lakehouse/*" element={<div className="p-8">Lakehouse (WIP)</div>} />
