@@ -47,6 +47,7 @@ interface AppState {
   injectSchemaFailure: () => void;
   triggerRecovery: () => void;
   openCircuitBreaker: () => void;
+  injectDemoScenario: (scenario: 'healthy' | 'degradation' | 'incident' | 'recovery') => void;
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -306,9 +307,38 @@ export const useStore = create<AppState>((set, get) => ({
     const newEvent: ActivityEvent = { id: generateId(), timestamp: new Date().toISOString(), severity: 'success', source: 'System Supervisor', eventType: 'Recovery', message: 'Pipeline recovered. Systems HEALTHY.' };
     set(state => ({
       status: 'HEALTHY',
+      circuitBreakerStatus: 'CLOSED',
+      circuitBreakerEvents: [...state.circuitBreakerEvents, { time: new Date().toISOString(), state: 'CLOSED', reason: 'Automated recovery sequence completed' }],
       metrics: { ...state.metrics, errorRate: 0.12, activeIncidents: Math.max(0, state.metrics.activeIncidents - 1), kafkaLag: 120 },
       quality: { ...state.quality, qualityScore: 99.8 },
       activityFeed: [newEvent, ...state.activityFeed].slice(0, 50),
     }));
+  },
+
+  injectDemoScenario: (scenario: 'healthy' | 'degradation' | 'incident' | 'recovery') => {
+    const { triggerRecovery, injectWarning, injectSchemaFailure, openCircuitBreaker } = get();
+    switch (scenario) {
+      case 'healthy':
+        triggerRecovery();
+        break;
+      case 'degradation':
+        injectWarning();
+        setTimeout(() => {
+          injectSchemaFailure();
+        }, 1500);
+        break;
+      case 'incident':
+        injectWarning();
+        setTimeout(() => injectSchemaFailure(), 500);
+        setTimeout(() => openCircuitBreaker(), 1500);
+        set(state => ({
+          circuitBreakerStatus: 'OPEN',
+          circuitBreakerEvents: [...state.circuitBreakerEvents, { time: new Date().toISOString(), state: 'OPEN', reason: 'Error rate threshold (5.0%) exceeded' }]
+        }));
+        break;
+      case 'recovery':
+        triggerRecovery();
+        break;
+    }
   }
 }));
