@@ -1,9 +1,10 @@
-﻿import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { 
   Activity, Database, GitCommit, LayoutDashboard, Settings, ShieldAlert, Workflow, Bell, Search 
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useStore } from "../lib/store/useStore";
+import { DemoController } from "../components/ui/DemoController";
 
 const SIDEBAR_ITEMS = [
   { name: "Overview", path: "/overview", icon: LayoutDashboard },
@@ -111,10 +112,11 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-background/50">
+        <main className="flex-1 overflow-y-auto bg-background/50 relative">
           <Outlet />
         </main>
       </div>
+      <DemoController />
     </div>
   );
 }
