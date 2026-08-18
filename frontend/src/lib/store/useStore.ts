@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { SystemStatus, DataQualityMetric, ActivityEvent, ServiceHealth, NotificationAlert, PipelineNodeData } from '../types';
+import type { SystemStatus, DataQualityMetric, ActivityEvent, ServiceHealth, NotificationAlert, PipelineNodeData, Incident, QualityRule, QuarantineRecord, IcebergSnapshot } from '../types';
 import type { Node, Edge, OnNodesChange } from '@xyflow/react';
 import { applyNodeChanges } from '@xyflow/react';
 
@@ -25,6 +25,14 @@ interface AppState {
   edges: Edge[];
   onNodesChange: OnNodesChange<Node<PipelineNodeData>>;
   setNodes: (nodes: Node<PipelineNodeData>[]) => void;
+  
+  // Phase 4 State
+  incidents: Incident[];
+  qualityRules: QualityRule[];
+  quarantineRecords: QuarantineRecord[];
+  snapshots: IcebergSnapshot[];
+  circuitBreakerStatus: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  circuitBreakerEvents: { time: string; state: string; reason?: string }[];
   
   // Feed & Infrastructure
   activityFeed: ActivityEvent[];
@@ -123,6 +131,42 @@ export const useStore = create<AppState>((set, get) => ({
   edges: initialEdges,
   onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
   setNodes: (nodes) => set({ nodes }),
+  
+  incidents: [
+    { id: 'INC-2026-0818-1', severity: 'critical', status: 'RESOLVED', startedAt: new Date(Date.now() - 86400000).toISOString(), resolvedAt: new Date(Date.now() - 82800000).toISOString(), duration: '1h 0m', errorRate: 14.5, threshold: 5.0, affectedComponent: 'Quality Engine', rootCause: 'Schema v2 rollout mismatch causing massive validation failures.', description: 'Upstream producers started sending v2 schema payloads before the Quality Engine ruleset was deployed.' },
+    { id: 'INC-2026-0816-1', severity: 'medium', status: 'RESOLVED', startedAt: new Date(Date.now() - 259200000).toISOString(), resolvedAt: new Date(Date.now() - 257400000).toISOString(), duration: '30m', errorRate: 6.2, threshold: 5.0, affectedComponent: 'Kafka Ingestion', rootCause: 'Broker 4 partition rebalancing latency spike.', description: 'Brief spike in ingestion latency exceeding SLAs.' }
+  ],
+  
+  qualityRules: [
+    { id: 'DQ-001', name: 'REQUIRED_FIELD_MISSING', description: 'A mandatory top-level field is completely missing from the JSON payload.', severity: 'critical', threshold: '0%', status: 'active', violationCount: 450 },
+    { id: 'DQ-002', name: 'NULL_REQUIRED_FIELD', description: 'A mandatory field exists but contains a null value.', severity: 'error', threshold: '0%', status: 'active', violationCount: 230 },
+    { id: 'DQ-003', name: 'INVALID_TYPE', description: 'Field type does not match schema (e.g. string instead of integer).', severity: 'critical', threshold: '0%', status: 'active', violationCount: 820 },
+    { id: 'DQ-004', name: 'INVALID_RANGE', description: 'Numeric value falls outside the allowed bounds (e.g. negative price).', severity: 'warning', threshold: '1%', status: 'active', violationCount: 15 },
+    { id: 'DQ-005', name: 'INVALID_ENUM', description: 'Value is not present in the allowed categorical list.', severity: 'error', threshold: '0%', status: 'active', violationCount: 85 },
+    { id: 'DQ-006', name: 'DUPLICATE_EVENT', description: 'Event with identical transaction ID already processed within window.', severity: 'warning', threshold: '0.1%', status: 'active', violationCount: 42 },
+    { id: 'DQ-007', name: 'SCHEMA_MISMATCH', description: 'The payload structure completely deviates from the registered schema.', severity: 'critical', threshold: '0%', status: 'active', violationCount: 0 },
+    { id: 'DQ-008', name: 'UNKNOWN_SCHEMA_VERSION', description: 'The schema version specified in the header is not registered in the catalog.', severity: 'error', threshold: '0%', status: 'active', violationCount: 0 }
+  ],
+  
+  quarantineRecords: [
+    { id: 'dlq-1', timestamp: new Date(Date.now() - 1000).toISOString(), eventId: 'evt_99x2a', transactionId: 'tx_55412', ruleId: 'DQ-003', field: 'user_age', expected: 'integer', actual: '"twenty"', source: 'mobile_app_ios', schemaVersion: 'v1.4', severity: 'critical' },
+    { id: 'dlq-2', timestamp: new Date(Date.now() - 4000).toISOString(), eventId: 'evt_99x2b', transactionId: 'tx_55413', ruleId: 'DQ-001', field: 'currency', expected: 'string', actual: 'undefined', source: 'web_checkout', schemaVersion: 'v2.0', severity: 'error' },
+    { id: 'dlq-3', timestamp: new Date(Date.now() - 15000).toISOString(), eventId: 'evt_99x2c', transactionId: 'tx_55414', ruleId: 'DQ-005', field: 'status', expected: '["PENDING", "COMPLETED"]', actual: '"UNKNOWN"', source: 'backend_api', schemaVersion: 'v2.0', severity: 'error' },
+  ],
+  
+  snapshots: [
+    { id: '104', timestamp: new Date().toISOString(), records: 1250000, operation: 'append', summary: 'Appended 25k records (batch 44)' },
+    { id: '103', timestamp: new Date(Date.now() - 3600000).toISOString(), records: 1225000, operation: 'append', summary: 'Appended 25k records (batch 43)' },
+    { id: '102', timestamp: new Date(Date.now() - 7200000).toISOString(), records: 1200000, operation: 'overwrite', summary: 'Compaction (optimized 400 small files)' },
+    { id: '101', timestamp: new Date(Date.now() - 10800000).toISOString(), records: 1200000, operation: 'append', summary: 'Appended 30k records (batch 42)' },
+  ],
+  
+  circuitBreakerStatus: 'CLOSED',
+  circuitBreakerEvents: [
+    { time: new Date(Date.now() - 86400000).toISOString(), state: 'CLOSED', reason: 'Manual reset' },
+    { time: new Date(Date.now() - 82800000).toISOString(), state: 'HALF_OPEN', reason: 'Recovery timeout reached, testing flow' },
+    { time: new Date(Date.now() - 81000000).toISOString(), state: 'OPEN', reason: 'Error rate threshold (5.0%) exceeded' },
+  ],
   
   activityFeed: [
     {
