@@ -1,9 +1,22 @@
-
+﻿
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
+import QualityPage from "./pages/QualityPage";
+import SystemPage from "./pages/SystemPage";
+import { useStore } from "./lib/store/useStore";
 
 function App() {
+  const simulateTick = useStore(state => state.simulateTick);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      simulateTick();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [simulateTick]);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -11,11 +24,11 @@ function App() {
           <Route index element={<Navigate to="/overview" replace />} />
           <Route path="overview" element={<DashboardPage />} />
           <Route path="pipeline/*" element={<div className="p-8">Pipeline (WIP)</div>} />
-          <Route path="quality/*" element={<div className="p-8">Data Quality (WIP)</div>} />
+          <Route path="quality/*" element={<QualityPage />} />
           <Route path="reliability/*" element={<div className="p-8">Reliability (WIP)</div>} />
           <Route path="lakehouse/*" element={<div className="p-8">Lakehouse (WIP)</div>} />
           <Route path="observability/*" element={<div className="p-8">Observability (WIP)</div>} />
-          <Route path="system/*" element={<div className="p-8">System (WIP)</div>} />
+          <Route path="system/*" element={<SystemPage />} />
           <Route path="*" element={<div className="p-8">404 Not Found</div>} />
         </Route>
       </Routes>
