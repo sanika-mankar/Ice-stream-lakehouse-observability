@@ -27,16 +27,21 @@ export interface QualityViolation {
   timestamp: string;
 }
 
-export interface PipelineNode {
+export type PipelineNodeData = Record<string, unknown> & {
   id: string;
-  type: "source" | "process" | "validation" | "storage" | "quarantine";
+  type: "source" | "kafka" | "flink" | "quality" | "storage" | "dlq" | "analytics";
   label: string;
+  description: string;
   status: SystemStatus;
   metrics: {
     throughput: number;
     latency: number;
     errorRate: number;
+    processed: number;
+    errors: number;
   };
+  lastActivity: string;
+  isCircuitOpen?: boolean;
 }
 
 export interface PipelineEdge {
@@ -46,8 +51,10 @@ export interface PipelineEdge {
   animated?: boolean;
 }
 
+import type { Node } from '@xyflow/react';
+
 export interface Pipeline {
-  nodes: PipelineNode[];
+  nodes: Node<PipelineNodeData>[];
   edges: PipelineEdge[];
   status: SystemStatus;
 }
