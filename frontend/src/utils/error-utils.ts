@@ -1,1 +1,1 @@
-﻿export const error-utilsHelper = () => true;
+export const errorutilsHelper = () => true;

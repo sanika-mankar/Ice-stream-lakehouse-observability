@@ -1,1 +1,1 @@
-﻿export const loggerHelper = () => true;
+export const loggerHelper = () => true;

@@ -1,1 +1,1 @@
-﻿export const object-utilsHelper = () => true;
+export const objectutilsHelper = () => true;

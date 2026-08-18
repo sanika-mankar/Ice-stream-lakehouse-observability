@@ -1,1 +1,1 @@
-﻿export const event-utilsHelper = () => true;
+export const eventutilsHelper = () => true;

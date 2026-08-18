@@ -1,1 +1,1 @@
-﻿export const date-utilsHelper = () => true;
+export const dateutilsHelper = () => true;

@@ -1,1 +1,1 @@
-﻿export const validatorsHelper = () => true;
+export const validatorsHelper = () => true;

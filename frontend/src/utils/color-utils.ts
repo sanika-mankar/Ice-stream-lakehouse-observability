@@ -1,1 +1,1 @@
-﻿export const color-utilsHelper = () => true;
+export const colorutilsHelper = () => true;

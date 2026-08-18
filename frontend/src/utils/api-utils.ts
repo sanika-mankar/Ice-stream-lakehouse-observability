@@ -1,1 +1,1 @@
-﻿export const api-utilsHelper = () => true;
+export const apiutilsHelper = () => true;

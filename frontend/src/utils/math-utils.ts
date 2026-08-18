@@ -1,1 +1,1 @@
-﻿export const math-utilsHelper = () => true;
+export const mathutilsHelper = () => true;

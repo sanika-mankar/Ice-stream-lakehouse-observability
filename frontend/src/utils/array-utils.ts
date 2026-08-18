@@ -1,1 +1,1 @@
-﻿export const array-utilsHelper = () => true;
+export const arrayutilsHelper = () => true;

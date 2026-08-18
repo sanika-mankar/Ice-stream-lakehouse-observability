@@ -1,1 +1,1 @@
-﻿export const url-utilsHelper = () => true;
+export const urlutilsHelper = () => true;

@@ -1,1 +1,1 @@
-﻿export const dom-utilsHelper = () => true;
+export const domutilsHelper = () => true;

@@ -1,1 +1,1 @@
-﻿export const formattersHelper = () => true;
+export const formattersHelper = () => true;

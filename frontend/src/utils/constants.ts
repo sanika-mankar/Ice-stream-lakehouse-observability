@@ -1,1 +1,1 @@
-﻿export const constantsHelper = () => true;
+export const constantsHelper = () => true;

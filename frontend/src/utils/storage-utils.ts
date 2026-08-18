@@ -1,1 +1,1 @@
-﻿export const storage-utilsHelper = () => true;
+export const storageutilsHelper = () => true;
