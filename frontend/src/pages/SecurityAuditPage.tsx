@@ -104,3 +104,5 @@ export default function SecurityAuditPage() {
     </div>
   );
 }
+
+// Add compliance score gauges
