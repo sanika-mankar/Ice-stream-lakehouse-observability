@@ -106,3 +106,5 @@ export default function SecurityAuditPage() {
 }
 
 // Add compliance score gauges
+
+// Implement active vulnerabilities list
