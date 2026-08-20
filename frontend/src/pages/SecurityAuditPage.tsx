@@ -110,3 +110,5 @@ export default function SecurityAuditPage() {
 // Implement active vulnerabilities list
 
 // Integrate IAM activity logs
+
+// Finalize security audit styles
