@@ -15,20 +15,20 @@ export function DemoController() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="flex flex-col items-center my-6 relative z-50">
       <div 
         className={cn(
-          "bg-card border border-border shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 ease-in-out flex flex-col",
-          isOpen ? "w-[340px] opacity-100 translate-y-0" : "w-12 h-12 opacity-80 hover:opacity-100 rounded-full cursor-pointer"
+          "bg-card border border-border shadow-2xl overflow-hidden transition-all duration-300 ease-in-out flex flex-col",
+          isOpen ? "fixed bottom-6 left-6 w-[340px] rounded-2xl opacity-100 translate-y-0" : "relative w-14 h-14 opacity-80 hover:opacity-100 rounded-full cursor-pointer"
         )}
       >
         {!isOpen ? (
           <div 
-            className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90"
+            className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:bg-primary/90 shadow-lg shadow-primary/20"
             onClick={() => setIsOpen(true)}
             title="Open Demo Controls"
           >
-            <Play className="w-5 h-5 fill-current" />
+            <Play className="w-6 h-6 fill-current ml-1" />
           </div>
         ) : (
           <>
@@ -97,6 +97,11 @@ export function DemoController() {
           </>
         )}
       </div>
+      {!isOpen && (
+        <span className="mt-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest text-center">
+          Simulation<br/>Engine
+        </span>
+      )}
     </div>
   );
 }
