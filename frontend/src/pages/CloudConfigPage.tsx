@@ -122,3 +122,5 @@ export default function CloudConfigPage() {
 }
 
 // Add region health indicators
+
+// Implement compute/storage quotas
