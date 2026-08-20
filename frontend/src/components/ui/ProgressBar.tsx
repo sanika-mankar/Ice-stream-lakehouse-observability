@@ -8,3 +8,5 @@ export function ProgressBar() {
   );
 }
 
+
+// Formatting polished for debugging
