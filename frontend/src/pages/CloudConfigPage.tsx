@@ -120,3 +120,5 @@ export default function CloudConfigPage() {
     </div>
   );
 }
+
+// Add region health indicators
