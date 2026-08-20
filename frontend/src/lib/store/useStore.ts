@@ -52,58 +52,60 @@ interface AppState {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+import { MarkerType } from '@xyflow/react';
+
 const initialNodes: Node<PipelineNodeData>[] = [
   {
     id: 'source',
     type: 'custom',
-    position: { x: 50, y: 200 },
+    position: { x: 50, y: 50 },
     data: { id: 'source', type: 'source', label: 'Data Generators', description: 'Mock transaction producers', status: 'HEALTHY', metrics: { throughput: 2450, latency: 5, errorRate: 0, processed: 1250000, errors: 0 }, lastActivity: new Date().toISOString() }
   },
   {
     id: 'kafka',
     type: 'custom',
-    position: { x: 400, y: 200 },
+    position: { x: 200, y: 500 },
     data: { id: 'kafka', type: 'kafka', label: 'Kafka Ingestion', description: 'Distributed event streaming', status: 'HEALTHY', metrics: { throughput: 2450, latency: 12, errorRate: 0, processed: 1250000, errors: 0 }, lastActivity: new Date().toISOString() }
   },
   {
     id: 'flink',
     type: 'custom',
-    position: { x: 750, y: 200 },
+    position: { x: 500, y: -150 },
     data: { id: 'flink', type: 'flink', label: 'Flink Processing', description: 'Stateful stream processing', status: 'HEALTHY', metrics: { throughput: 2450, latency: 25, errorRate: 0, processed: 1250000, errors: 0 }, lastActivity: new Date().toISOString() }
   },
   {
     id: 'quality',
     type: 'custom',
-    position: { x: 1100, y: 200 },
+    position: { x: 800, y: 450 },
     data: { id: 'quality', type: 'quality', label: 'Quality Engine', description: 'Schema validation rules', status: 'HEALTHY', metrics: { throughput: 2450, latency: 18, errorRate: 0.12, processed: 1250000, errors: 1500 }, lastActivity: new Date().toISOString() }
   },
   {
     id: 'iceberg',
     type: 'custom',
-    position: { x: 1450, y: 100 },
+    position: { x: 1200, y: -100 },
     data: { id: 'iceberg', type: 'storage', label: 'Iceberg Catalog', description: 'Data lakehouse storage', status: 'HEALTHY', metrics: { throughput: 2445, latency: 150, errorRate: 0, processed: 1248500, errors: 0 }, lastActivity: new Date().toISOString() }
   },
   {
     id: 'analytics',
     type: 'custom',
-    position: { x: 1800, y: 100 },
+    position: { x: 1100, y: 600 },
     data: { id: 'analytics', type: 'analytics', label: 'Analytics API', description: 'Real-time serving layer', status: 'HEALTHY', metrics: { throughput: 1500, latency: 45, errorRate: 0, processed: 850000, errors: 0 }, lastActivity: new Date().toISOString() }
   },
   {
     id: 'dlq',
     type: 'custom',
-    position: { x: 1450, y: 300 },
+    position: { x: 650, y: 800 },
     data: { id: 'dlq', type: 'dlq', label: 'Quarantine / DLQ', description: 'Dead letter queue', status: 'HEALTHY', metrics: { throughput: 5, latency: 10, errorRate: 0, processed: 1500, errors: 0 }, lastActivity: new Date().toISOString() }
   }
 ];
 
 const initialEdges: Edge[] = [
-  { id: 'e1', source: 'source', target: 'kafka', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e2', source: 'kafka', target: 'flink', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e3', source: 'flink', target: 'quality', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e4', source: 'quality', target: 'iceberg', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e5', source: 'iceberg', target: 'analytics', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e6', source: 'quality', target: 'dlq', type: 'custom', data: { state: 'HEALTHY' } }
+  { id: 'e1', source: 'source', target: 'kafka', type: 'custom', data: { state: 'HEALTHY' }, markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } },
+  { id: 'e2', source: 'kafka', target: 'flink', type: 'custom', data: { state: 'HEALTHY' }, markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } },
+  { id: 'e3', source: 'flink', target: 'quality', type: 'custom', data: { state: 'HEALTHY' }, markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } },
+  { id: 'e4', source: 'quality', target: 'iceberg', type: 'custom', data: { state: 'HEALTHY' }, markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } },
+  { id: 'e5', source: 'iceberg', target: 'analytics', type: 'custom', data: { state: 'HEALTHY' }, markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } },
+  { id: 'e6', source: 'quality', target: 'dlq', type: 'custom', data: { state: 'HEALTHY' }, markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } }
 ];
 
 export const useStore = create<AppState>((set, get) => ({
