@@ -147,3 +147,5 @@ export default function NetworkMeshPage() {
 }
 
 // Build SVG topology map
+
+// Add ingress/egress bandwidth meters
