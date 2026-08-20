@@ -145,3 +145,5 @@ export default function NetworkMeshPage() {
     </div>
   );
 }
+
+// Build SVG topology map
