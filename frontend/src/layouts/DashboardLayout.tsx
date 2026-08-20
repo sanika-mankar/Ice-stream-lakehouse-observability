@@ -1,18 +1,26 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { 
-  Activity, Database, GitCommit, LayoutDashboard, Settings, ShieldAlert, Workflow, Bell, Search 
+  Activity, Database, GitCommit, LayoutDashboard, Settings, ShieldAlert, Workflow, Bell, Search,
+  LineChart, Cloud, Network, Shield
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useStore } from "../lib/store/useStore";
 import { DemoController } from "../components/ui/DemoController";
 
-const SIDEBAR_ITEMS = [
+const CORE_ITEMS = [
   { name: "Overview", path: "/overview", icon: LayoutDashboard },
   { name: "Pipeline", path: "/pipeline", icon: Workflow },
   { name: "Data Quality", path: "/quality", icon: ShieldAlert },
+];
+
+const INFRASTRUCTURE_ITEMS = [
+  { name: "Observability", path: "/observability", icon: GitCommit },
   { name: "Reliability", path: "/reliability", icon: Activity },
   { name: "Lakehouse", path: "/lakehouse", icon: Database },
-  { name: "Observability", path: "/observability", icon: GitCommit },
+  { name: "Analytics", path: "/analytics", icon: LineChart },
+  { name: "Security Audit", path: "/security", icon: Shield },
+  { name: "Network Mesh", path: "/network", icon: Network },
+  { name: "Cloud Config", path: "/cloud", icon: Cloud },
   { name: "System", path: "/system", icon: Settings },
 ];
 
@@ -32,25 +40,10 @@ export default function DashboardLayout() {
           </div>
         </div>
         
-        <div className="px-4 py-4">
-          <div className="text-xs font-semibold text-muted-foreground tracking-wider mb-2 uppercase">Core</div>
-          <nav className="space-y-1">
-            {SIDEBAR_ITEMS.slice(0, 3).map((item) => (
-              <NavLink key={item.path} to={item.path} className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-              )}>
-                <item.icon className="h-4 w-4" />
-                {item.name}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        <div className="px-4 pb-4 flex-1">
+        <div className="px-4 py-4 flex-1 overflow-y-auto">
           <div className="text-xs font-semibold text-muted-foreground tracking-wider mb-2 uppercase">Infrastructure</div>
           <nav className="space-y-1">
-            {SIDEBAR_ITEMS.slice(3).map((item) => (
+            {INFRASTRUCTURE_ITEMS.map((item) => (
               <NavLink key={item.path} to={item.path} className={({ isActive }) => cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -60,9 +53,11 @@ export default function DashboardLayout() {
               </NavLink>
             ))}
           </nav>
+
+          <DemoController />
         </div>
 
-        <div className="p-4 border-t border-border mt-auto">
+        <div className="p-4 border-t border-border mt-auto flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
               <span className="text-xs font-medium text-muted-foreground">Admin</span>
@@ -79,6 +74,18 @@ export default function DashboardLayout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Header */}
         <header className="flex h-14 items-center gap-4 border-b border-border bg-card/50 backdrop-blur-sm px-6 sticky top-0 z-10">
+          <div className="flex items-center gap-2 mr-4">
+            {CORE_ITEMS.map((item) => (
+              <NavLink key={item.path} to={item.path} className={({ isActive }) => cn(
+                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+              )}>
+                <item.icon className="h-4 w-4" />
+                {item.name}
+              </NavLink>
+            ))}
+          </div>
+
           <div className="flex-1 flex items-center gap-4">
             <div className="relative w-64 max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -116,7 +123,6 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
-      <DemoController />
     </div>
   );
 }
