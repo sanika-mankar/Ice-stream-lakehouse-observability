@@ -24,45 +24,45 @@ export function CustomNode({ data, selected }: NodeProps<Node<PipelineNodeData>>
 
   return (
     <div className={cn(
-      "w-[300px] rounded-xl border-2 bg-card/90 backdrop-blur transition-all duration-300",
+      "w-[460px] rounded-xl border-2 bg-card/90 backdrop-blur transition-all duration-300",
       selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "",
       borderColor,
       isCritical ? 'animate-pulse' : '',
       selected || isCritical || isWarning ? glowColor : ''
     )}>
       {/* Node Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-muted/20">
-        <div className="flex items-center gap-2">
-          <div className={cn("p-1.5 rounded-md bg-background border", borderColor)}>
-            <Icon className={cn("w-4 h-4", 
+      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/20">
+        <div className="flex items-center gap-3">
+          <div className={cn("p-2 rounded-md bg-background border", borderColor)}>
+            <Icon className={cn("w-5 h-5", 
               isHealthy ? "text-status-healthy" : isWarning ? "text-status-warning" : "text-status-critical"
             )} />
           </div>
           <div>
-            <h3 className="font-semibold text-sm leading-none">{data.label}</h3>
-            <span className="text-[10px] text-muted-foreground uppercase">{data.type}</span>
+            <h3 className="font-bold text-base leading-none">{data.label}</h3>
+            <span className="text-xs text-muted-foreground uppercase">{data.type}</span>
           </div>
         </div>
-        <StatusBadge status={data.isCircuitOpen ? 'CIRCUIT_BREAKER_OPEN' : data.status} className="text-[10px] px-1.5 py-0" />
+        <StatusBadge status={data.isCircuitOpen ? 'CIRCUIT_BREAKER_OPEN' : data.status} className="text-xs px-2 py-0.5" />
       </div>
 
       {/* Node Metrics */}
-      <div className="p-3 grid grid-cols-2 gap-2 text-xs">
+      <div className="p-4 grid grid-cols-2 gap-4 text-sm">
         <div className="flex flex-col">
-          <span className="text-muted-foreground mb-1 text-[10px] uppercase">Throughput</span>
-          <span className="font-medium font-mono">{data.metrics.throughput.toLocaleString()} /s</span>
+          <span className="text-muted-foreground mb-1 text-xs uppercase font-medium">Throughput</span>
+          <span className="font-semibold font-mono text-base">{data.metrics.throughput.toLocaleString()} /s</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-muted-foreground mb-1 text-[10px] uppercase">Latency</span>
-          <span className="font-medium font-mono">{data.metrics.latency}ms</span>
+          <span className="text-muted-foreground mb-1 text-xs uppercase font-medium">Latency</span>
+          <span className="font-semibold font-mono text-base">{data.metrics.latency}ms</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-muted-foreground mb-1 text-[10px] uppercase">Processed</span>
-          <span className="font-medium font-mono">{(data.metrics.processed / 1000).toFixed(1)}k</span>
+          <span className="text-muted-foreground mb-1 text-xs uppercase font-medium">Processed</span>
+          <span className="font-semibold font-mono text-base">{(data.metrics.processed / 1000).toFixed(1)}k</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-muted-foreground mb-1 text-[10px] uppercase">Error Rate</span>
-          <span className={cn("font-medium font-mono", data.metrics.errorRate > 5 ? "text-status-critical" : "")}>
+          <span className="text-muted-foreground mb-1 text-xs uppercase font-medium">Error Rate</span>
+          <span className={cn("font-semibold font-mono text-base", data.metrics.errorRate > 5 ? "text-status-critical" : "")}>
             {data.metrics.errorRate.toFixed(2)}%
           </span>
         </div>
