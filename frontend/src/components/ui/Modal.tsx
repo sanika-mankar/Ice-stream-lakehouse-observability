@@ -8,3 +8,5 @@ export function Modal() {
   );
 }
 
+
+// Formatting polished for debugging
