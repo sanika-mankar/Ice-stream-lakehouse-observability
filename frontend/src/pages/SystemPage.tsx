@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useStore } from '../lib/store/useStore';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -6,7 +6,7 @@ import { Server, Database, CheckCircle2, Clock, Cpu } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 export default function SystemPage() {
-  const { services, simulateTick, triggerIncident, triggerRecovery, triggerCircuitBreaker } = useStore();
+  const { services, simulateTick, injectSchemaFailure, triggerRecovery, openCircuitBreaker } = useStore();
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
@@ -18,8 +18,8 @@ export default function SystemPage() {
       <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-card mb-8">
         <span className="text-sm font-semibold mr-4">Simulation Controls:</span>
         <Button size="sm" variant="outline" onClick={simulateTick}>Manual Tick</Button>
-        <Button size="sm" variant="danger" onClick={triggerIncident}>Trigger Incident</Button>
-        <Button size="sm" variant="danger" onClick={triggerCircuitBreaker}>Open Circuit Breaker</Button>
+        <Button size="sm" variant="danger" onClick={injectSchemaFailure}>Trigger Incident</Button>
+        <Button size="sm" variant="danger" onClick={openCircuitBreaker}>Open Circuit Breaker</Button>
         <Button size="sm" variant="primary" onClick={triggerRecovery}>Trigger Recovery</Button>
       </div>
 
