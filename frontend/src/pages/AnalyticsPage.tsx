@@ -142,3 +142,5 @@ export default function AnalyticsPage() {
 // Implement revenue bar chart
 
 // Integrate user growth trend
+
+// Add recent sales activity table
