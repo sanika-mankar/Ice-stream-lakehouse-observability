@@ -118,3 +118,5 @@ export default function ObservabilityPage() {
 }
 
 // Add metrics summary cards
+
+// Implement distributed traces table
