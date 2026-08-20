@@ -116,3 +116,5 @@ export default function ObservabilityPage() {
     </div>
   );
 }
+
+// Add metrics summary cards
