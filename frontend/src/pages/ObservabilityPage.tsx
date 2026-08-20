@@ -122,3 +122,5 @@ export default function ObservabilityPage() {
 // Implement distributed traces table
 
 // Integrate log stream simulator
+
+// Finalize observability styles
