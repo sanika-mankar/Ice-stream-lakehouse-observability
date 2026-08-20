@@ -13,7 +13,7 @@ export function SimulationPanel() {
   } = useStore();
 
   return (
-    <Card className="absolute top-4 right-4 w-64 glass z-10 shadow-2xl">
+    <Card className="w-full glass shadow-2xl">
       <CardHeader className="py-3 px-4 border-b border-border bg-muted/20">
         <CardTitle className="text-sm font-bold flex items-center justify-between">
           <span>DEMO SIMULATION</span>
