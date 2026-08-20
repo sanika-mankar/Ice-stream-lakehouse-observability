@@ -8,3 +8,5 @@ export function CommandSearch() {
   );
 }
 
+
+// Formatting polished for debugging
