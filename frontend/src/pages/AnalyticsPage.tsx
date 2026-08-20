@@ -136,3 +136,5 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+// Add business KPI widgets
