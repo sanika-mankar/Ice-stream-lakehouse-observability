@@ -40,7 +40,7 @@ export function CustomEdge({
       <BaseEdge
         id={id}
         path={edgePath}
-        markerEnd={markerEnd}
+        markerEnd={`url(#arrow-${edgeState})`}
         style={{
           ...style,
           strokeWidth: 2,
