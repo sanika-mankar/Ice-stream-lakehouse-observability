@@ -8,6 +8,11 @@ import SystemPage from "./pages/SystemPage";
 import PipelinePage from "./pages/PipelinePage";
 import ReliabilityPage from "./pages/ReliabilityPage";
 import LakehousePage from "./pages/LakehousePage";
+import ObservabilityPage from "./pages/ObservabilityPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import SecurityAuditPage from "./pages/SecurityAuditPage";
+import NetworkMeshPage from "./pages/NetworkMeshPage";
+import CloudConfigPage from "./pages/CloudConfigPage";
 import { useStore } from "./lib/store/useStore";
 
 function App() {
@@ -30,7 +35,11 @@ function App() {
           <Route path="quality/*" element={<QualityPage />} />
           <Route path="reliability/*" element={<ReliabilityPage />} />
           <Route path="lakehouse/*" element={<LakehousePage />} />
-          <Route path="observability/*" element={<div className="p-8">Observability (WIP)</div>} />
+          <Route path="observability/*" element={<ObservabilityPage />} />
+          <Route path="analytics/*" element={<AnalyticsPage />} />
+          <Route path="security/*" element={<SecurityAuditPage />} />
+          <Route path="network/*" element={<NetworkMeshPage />} />
+          <Route path="cloud/*" element={<CloudConfigPage />} />
           <Route path="system/*" element={<SystemPage />} />
           <Route path="*" element={<div className="p-8">404 Not Found</div>} />
         </Route>
