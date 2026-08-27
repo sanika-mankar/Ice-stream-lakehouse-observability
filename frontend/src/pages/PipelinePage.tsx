@@ -7,7 +7,7 @@ export default function PipelinePage() {
         <img 
           src="/Pipeline.jpg.png" 
           alt="Pipeline Architecture" 
-          className="w-full h-full object-contain pointer-events-none select-none relative z-10"
+          className="w-full h-full object-contain pointer-events-none select-none relative z-10" style={{ mixBlendMode: "screen" }}
         />
       </div>
     </div>
