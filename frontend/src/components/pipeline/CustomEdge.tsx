@@ -43,11 +43,12 @@ export function CustomEdge({
         markerEnd={`url(#arrow-${edgeState})`}
         style={{
           ...style,
-          strokeWidth: 2,
-          stroke: isFlowing ? strokeColor : 'hsl(var(--border))',
-          strokeDasharray: isFlowing ? '5 5' : '0',
+          strokeWidth: 3,
+          stroke: isFlowing ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)',
+          strokeDasharray: isFlowing ? '8 8' : '0',
           animation: isFlowing ? `dashdraw ${animationSpeed} linear infinite` : 'none',
           opacity: edgeState === 'CIRCUIT_BREAKER_OPEN' ? 0.3 : 1,
+          filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.5))',
         }}
         className="react-flow__edge-path transition-all duration-300"
       />
@@ -55,7 +56,7 @@ export function CustomEdge({
       {/* Invisible thicker edge for easier clicking/hovering */}
       <BaseEdge
         path={edgePath}
-        style={{ strokeWidth: 20, stroke: 'transparent' }}
+        style={{ strokeWidth: 24, stroke: 'transparent' }}
         className="react-flow__edge-interaction"
       />
       
