@@ -247,9 +247,9 @@ export default function LakehousePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Storage Optimization & Compaction */}
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-slate-800">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
               Storage Optimization & Compaction
             </CardTitle>
@@ -257,20 +257,20 @@ export default function LakehousePage() {
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 border border-white/5 rounded-lg bg-black/40">
-                  <div className="text-xs text-white/50 mb-1">Small Files Count</div>
+                <div className="p-4 border border-black/5 rounded-lg bg-white/60">
+                  <div className="text-xs text-slate-500 mb-1">Small Files Count</div>
                   <div className="text-2xl font-bold text-amber-400 font-mono">14,203</div>
                   <div className="text-[10px] text-amber-400/70 mt-1">Needs compaction</div>
                 </div>
-                <div className="p-4 border border-white/5 rounded-lg bg-black/40">
-                  <div className="text-xs text-white/50 mb-1">Avg File Size</div>
+                <div className="p-4 border border-black/5 rounded-lg bg-white/60">
+                  <div className="text-xs text-slate-500 mb-1">Avg File Size</div>
                   <div className="text-2xl font-bold text-green-400 font-mono">18.4 MB</div>
                   <div className="text-[10px] text-green-400/70 mt-1">Target: 256 MB</div>
                 </div>
               </div>
-              <div className="bg-black/40 border border-white/5 p-4 rounded-lg">
-                <h4 className="text-sm font-semibold text-white mb-2">Z-Order Clustering Recommendation</h4>
-                <p className="text-xs text-white/60 mb-3">Based on query patterns, sorting by `merchant_id` and `timestamp` will improve read performance by estimated 45%.</p>
+              <div className="bg-white/60 border border-black/5 p-4 rounded-lg">
+                <h4 className="text-sm font-semibold text-slate-800 mb-2">Z-Order Clustering Recommendation</h4>
+                <p className="text-xs text-slate-500 mb-3">Based on query patterns, sorting by `merchant_id` and `timestamp` will improve read performance by estimated 45%.</p>
                 <button className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-3 py-1.5 rounded hover:bg-purple-500/30 transition-colors">
                   Trigger Async OPTIMIZE
                 </button>
@@ -281,54 +281,54 @@ export default function LakehousePage() {
 
         {/* Data Lineage & Cost Analysis */}
         <div className="space-y-6">
-          <Card className="glass bg-black/20 backdrop-blur-md border-white/10">
+          <Card className="glass bg-white/40 backdrop-blur-md border-black/10">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-slate-800">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 Upstream Lineage
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3 p-2 bg-black/40 border border-white/5 rounded">
+                <div className="flex items-center gap-3 p-2 bg-white/60 border border-black/5 rounded">
                   <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/10">Kafka</Badge>
-                  <span className="text-sm font-mono text-white/80">events_raw_topic</span>
+                  <span className="text-sm font-mono text-slate-600">events_raw_topic</span>
                 </div>
                 <div className="w-px h-4 bg-border ml-6"></div>
-                <div className="flex items-center gap-3 p-2 bg-black/40 border border-white/5 rounded">
+                <div className="flex items-center gap-3 p-2 bg-white/60 border border-black/5 rounded">
                   <Badge variant="outline" className="border-purple-500/30 text-purple-400 bg-purple-500/10">Flink</Badge>
-                  <span className="text-sm font-mono text-white/80">sessionization_job_v2</span>
+                  <span className="text-sm font-mono text-slate-600">sessionization_job_v2</span>
                 </div>
                 <div className="w-px h-4 bg-border ml-6"></div>
                 <div className="flex items-center gap-3 p-2 border-l-2 border-primary bg-primary/5 rounded">
                   <Database className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-bold text-white">Clean Transactions Table</span>
+                  <span className="text-sm font-bold text-slate-800">Clean Transactions Table</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass bg-black/20 backdrop-blur-md border-white/10">
+          <Card className="glass bg-white/40 backdrop-blur-md border-black/10">
             <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium text-white/80">Monthly Cost Estimate</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-600">Monthly Cost Estimate</CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-white">$1,420.50</span>
+                <span className="text-3xl font-bold text-slate-800">$1,420.50</span>
                 <span className="text-xs text-red-400">+12% vs last month</span>
               </div>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-white/60">
+                <div className="flex justify-between text-slate-500">
                   <span>S3 Storage (Standard)</span>
-                  <span className="font-mono text-white">$450.00</span>
+                  <span className="font-mono text-slate-800">$450.00</span>
                 </div>
-                <div className="flex justify-between text-white/60">
+                <div className="flex justify-between text-slate-500">
                   <span>S3 API (PUT/GET)</span>
-                  <span className="font-mono text-white">$120.50</span>
+                  <span className="font-mono text-slate-800">$120.50</span>
                 </div>
-                <div className="flex justify-between text-white/60 border-b border-white/10 pb-2">
+                <div className="flex justify-between text-slate-500 border-b border-black/10 pb-2">
                   <span>Compute (Compaction/Vacuum)</span>
-                  <span className="font-mono text-white">$850.00</span>
+                  <span className="font-mono text-slate-800">$850.00</span>
                 </div>
               </div>
             </CardContent>

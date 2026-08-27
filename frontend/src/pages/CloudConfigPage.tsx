@@ -120,34 +120,34 @@ export default function CloudConfigPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Reserved Instance Coverage */}
-        <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="glass rounded-xl border border-black/10 p-6 bg-white/40 backdrop-blur-md">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Reserved Instance (RI) Coverage
           </h2>
           <div className="space-y-4">
             <div>
-              <div className="flex justify-between text-xs mb-1 text-white/80">
+              <div className="flex justify-between text-xs mb-1 text-slate-600">
                 <span>EC2 Compute Coverage (Target: 80%)</span>
                 <span className="font-mono text-green-400">82%</span>
               </div>
-              <div className="w-full bg-white/5 rounded-full h-2">
+              <div className="w-full bg-black/ rounded-full h-2">
                 <div className="bg-green-500 h-2 rounded-full" style={{ width: '82%' }}></div>
               </div>
             </div>
             <div>
-              <div className="flex justify-between text-xs mb-1 text-white/80">
+              <div className="flex justify-between text-xs mb-1 text-slate-600">
                 <span>RDS Database Coverage (Target: 90%)</span>
                 <span className="font-mono text-amber-400">65%</span>
               </div>
-              <div className="w-full bg-white/5 rounded-full h-2">
+              <div className="w-full bg-black/ rounded-full h-2">
                 <div className="bg-amber-500 h-2 rounded-full" style={{ width: '65%' }}></div>
               </div>
             </div>
             
-            <div className="mt-4 pt-4 border-t border-white/5">
-              <h4 className="text-sm font-semibold text-white mb-2">Cost Optimization Recommendation</h4>
-              <p className="text-xs text-white/60 mb-3">Purchasing a 1-year No Upfront RI for `db.r6g.4xlarge` in `eu-west-2` will save approximately <strong className="text-green-400 font-mono">$1,240/mo</strong>.</p>
+            <div className="mt-4 pt-4 border-t border-black/5">
+              <h4 className="text-sm font-semibold text-slate-800 mb-2">Cost Optimization Recommendation</h4>
+              <p className="text-xs text-slate-500 mb-3">Purchasing a 1-year No Upfront RI for `db.r6g.4xlarge` in `eu-west-2` will save approximately <strong className="text-green-400 font-mono">$1,240/mo</strong>.</p>
               <button className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded hover:bg-green-500/30 transition-colors">
                 Review Purchase Options
               </button>
@@ -156,46 +156,46 @@ export default function CloudConfigPage() {
         </div>
 
         {/* Multi-Cloud Topology */}
-        <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="glass rounded-xl border border-black/10 p-6 bg-white/40 backdrop-blur-md">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3v0a2 2 0 0 1 2 2v0c0 1.1.9 2 2 2v0a2 2 0 0 0 2-2v0c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg>
             Multi-Cloud Transit Gateway
           </h2>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between p-3 bg-black/40 border border-white/5 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-white/60 border border-black/5 rounded-lg">
               <div className="flex items-center gap-3">
                 <Cloud className="w-5 h-5 text-amber-500" />
                 <div>
-                  <div className="text-sm font-medium text-white">AWS (Primary)</div>
-                  <div className="text-[10px] text-white/50">VPC: vpc-0a1b2c3d</div>
+                  <div className="text-sm font-medium text-slate-800">AWS (Primary)</div>
+                  <div className="text-[10px] text-slate-500">VPC: vpc-0a1b2c3d</div>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-xs font-bold text-green-400">Connected</div>
-                <div className="text-[10px] text-white/50">BGP Active</div>
+                <div className="text-[10px] text-slate-500">BGP Active</div>
               </div>
             </div>
             
             <div className="flex items-center justify-center">
-              <div className="w-px h-6 bg-white/20"></div>
+              <div className="w-px h-6 bg-black/"></div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-black/40 border border-white/5 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-white/60 border border-black/5 rounded-lg">
               <div className="flex items-center gap-3">
                 <Cloud className="w-5 h-5 text-blue-500" />
                 <div>
-                  <div className="text-sm font-medium text-white">GCP (Analytics & ML)</div>
-                  <div className="text-[10px] text-white/50">VPC: prod-data-net</div>
+                  <div className="text-sm font-medium text-slate-800">GCP (Analytics & ML)</div>
+                  <div className="text-[10px] text-slate-500">VPC: prod-data-net</div>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-xs font-bold text-green-400">Connected</div>
-                <div className="text-[10px] text-white/50">IPSec Tunnel UP</div>
+                <div className="text-[10px] text-slate-500">IPSec Tunnel UP</div>
               </div>
             </div>
             
             <div className="flex justify-between items-center mt-2 px-2">
-              <span className="text-[10px] text-white/40">Cross-Cloud Latency</span>
+              <span className="text-[10px] text-slate-400">Cross-Cloud Latency</span>
               <span className="text-[10px] font-mono font-bold text-green-400">8.2ms</span>
             </div>
           </div>

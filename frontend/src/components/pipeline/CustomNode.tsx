@@ -57,19 +57,19 @@ export function CustomNode({ data, selected }: NodeProps<Node<PipelineNodeData>>
       <div className="grid grid-cols-2 gap-3 mt-2 border-t border-dashed pt-3" style={{ borderColor: `${theme.color}66` }}>
         <div className="flex flex-col items-center">
           <span className="text-[9px] uppercase font-bold tracking-wider opacity-60" style={{ color: theme.color }}>Throughput</span>
-          <span className="font-mono text-sm font-bold text-white tracking-wider">{data.metrics.throughput.toLocaleString()} <span className="text-[10px] opacity-50">/s</span></span>
+          <span className="font-mono text-sm font-bold text-slate-800 tracking-wider">{data.metrics.throughput.toLocaleString()} <span className="text-[10px] opacity-50">/s</span></span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[9px] uppercase font-bold tracking-wider opacity-60" style={{ color: theme.color }}>Latency</span>
-          <span className="font-mono text-sm font-bold text-white tracking-wider">{data.metrics.latency} <span className="text-[10px] opacity-50">ms</span></span>
+          <span className="font-mono text-sm font-bold text-slate-800 tracking-wider">{data.metrics.latency} <span className="text-[10px] opacity-50">ms</span></span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[9px] uppercase font-bold tracking-wider opacity-60" style={{ color: theme.color }}>Processed</span>
-          <span className="font-mono text-sm font-bold text-white tracking-wider">{(data.metrics.processed / 1000).toFixed(1)}k</span>
+          <span className="font-mono text-sm font-bold text-slate-800 tracking-wider">{(data.metrics.processed / 1000).toFixed(1)}k</span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[9px] uppercase font-bold tracking-wider opacity-60" style={{ color: theme.color }}>Errors</span>
-          <span className="font-mono text-sm font-bold text-white tracking-wider">
+          <span className="font-mono text-sm font-bold text-slate-800 tracking-wider">
             {data.metrics.errorRate.toFixed(1)}%
           </span>
         </div>

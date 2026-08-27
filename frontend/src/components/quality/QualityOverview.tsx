@@ -32,71 +32,71 @@ export function QualityOverview() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-lg relative overflow-hidden group">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-lg relative overflow-hidden group">
           <div className="absolute left-0 top-0 w-1 h-full bg-green-400" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-white/50 font-bold flex justify-between items-center">
+            <CardTitle className="text-xs uppercase tracking-wider text-slate-500 font-bold flex justify-between items-center">
               Overall Score
               <ShieldCheck className="w-4 h-4 text-green-400" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{quality.qualityScore.toFixed(2)}%</div>
+            <div className="text-3xl font-bold text-slate-800">{quality.qualityScore.toFixed(2)}%</div>
             <div className="flex items-center text-xs text-green-400 mt-1 font-medium">
               <TrendingUp className="w-3 h-3 mr-1" /> +0.5% vs yesterday
             </div>
           </CardContent>
         </Card>
         
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-lg relative overflow-hidden group">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-lg relative overflow-hidden group">
           <div className="absolute left-0 top-0 w-1 h-full bg-cyan-400" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-white/50 font-bold flex justify-between items-center">
+            <CardTitle className="text-xs uppercase tracking-wider text-slate-500 font-bold flex justify-between items-center">
               Valid Records
               <TrendingUp className="w-4 h-4 text-cyan-400" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{quality.validEvents.toLocaleString()}</div>
-            <div className="text-xs text-white/50 mt-1 font-medium">Out of total processed</div>
+            <div className="text-3xl font-bold text-slate-800">{quality.validEvents.toLocaleString()}</div>
+            <div className="text-xs text-slate-500 mt-1 font-medium">Out of total processed</div>
           </CardContent>
         </Card>
         
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-lg relative overflow-hidden group">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-lg relative overflow-hidden group">
           <div className="absolute left-0 top-0 w-1 h-full bg-red-500" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-white/50 font-bold flex justify-between items-center">
+            <CardTitle className="text-xs uppercase tracking-wider text-slate-500 font-bold flex justify-between items-center">
               Quarantined (DLQ)
               <AlertTriangle className="w-4 h-4 text-red-500" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{quality.invalidEvents.toLocaleString()}</div>
+            <div className="text-3xl font-bold text-slate-800">{quality.invalidEvents.toLocaleString()}</div>
             <div className="flex items-center text-xs text-red-400 mt-1 font-medium">
               <TrendingDown className="w-3 h-3 mr-1" /> -12% vs last hour
             </div>
           </CardContent>
         </Card>
         
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-lg relative overflow-hidden group">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-lg relative overflow-hidden group">
           <div className="absolute left-0 top-0 w-1 h-full bg-amber-400" />
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wider text-white/50 font-bold flex justify-between items-center">
+            <CardTitle className="text-xs uppercase tracking-wider text-slate-500 font-bold flex justify-between items-center">
               Error Rate
               <TrendingDown className="w-4 h-4 text-amber-400" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">0.12%</div>
-            <div className="text-xs text-white/50 mt-1 font-medium">Within 1.0% SLA threshold</div>
+            <div className="text-3xl font-bold text-slate-800">0.12%</div>
+            <div className="text-xs text-slate-500 mt-1 font-medium">Within 1.0% SLA threshold</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-          <CardHeader className="border-b border-white/5 bg-white/5">
-            <CardTitle className="text-white text-sm">Quality Score Trend (24h)</CardTitle>
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+          <CardHeader className="border-b border-black/5 bg-black/">
+            <CardTitle className="text-slate-800 text-sm">Quality Score Trend (24h)</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] p-6">
             <ResponsiveContainer width="100%" height="100%">
@@ -120,9 +120,9 @@ export function QualityOverview() {
           </CardContent>
         </Card>
 
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-          <CardHeader className="border-b border-white/5 bg-white/5">
-            <CardTitle className="text-white text-sm">Violations by Category</CardTitle>
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+          <CardHeader className="border-b border-black/5 bg-black/">
+            <CardTitle className="text-slate-800 text-sm">Violations by Category</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] p-6">
             <ResponsiveContainer width="100%" height="100%">
@@ -142,14 +142,14 @@ export function QualityOverview() {
         </Card>
       </div>
 
-      <Card className="glass bg-black/20 backdrop-blur-md border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-        <CardHeader className="border-b border-white/5 bg-white/5">
-          <CardTitle className="text-white text-sm">Recent Violations & Quarantine DLQ</CardTitle>
+      <Card className="glass bg-white/40 backdrop-blur-md border-black/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+        <CardHeader className="border-b border-black/5 bg-black/">
+          <CardTitle className="text-slate-800 text-sm">Recent Violations & Quarantine DLQ</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-white/5 text-white/60 text-[11px] uppercase tracking-wider">
+              <thead className="bg-black/ text-slate-500 text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 font-medium">Violation ID</th>
                   <th className="px-6 py-4 font-medium">Rule ID</th>
@@ -158,16 +158,16 @@ export function QualityOverview() {
                   <th className="px-6 py-4 font-medium">Timestamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-black/5">
                 {recentViolations.map((violation) => (
-                  <tr key={violation.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={violation.id} className="hover:bg-black/50/5 transition-colors">
                     <td className="px-6 py-4 font-mono font-medium text-cyan-400">{violation.id}</td>
-                    <td className="px-6 py-4 font-mono text-white/80">{violation.ruleId}</td>
-                    <td className="px-6 py-4 text-white/90">{violation.description}</td>
+                    <td className="px-6 py-4 font-mono text-slate-600">{violation.ruleId}</td>
+                    <td className="px-6 py-4 text-slate-700">{violation.description}</td>
                     <td className="px-6 py-4">
                       <StatusBadge status={violation.severity} />
                     </td>
-                    <td className="px-6 py-4 text-white/50 font-mono text-xs">
+                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">
                       {new Date(violation.timestamp).toLocaleTimeString()}
                     </td>
                   </tr>

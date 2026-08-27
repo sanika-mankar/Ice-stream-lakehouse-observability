@@ -156,9 +156,9 @@ export default function ReliabilityPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Chaos Engineering Experiments */}
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-slate-800">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
               Chaos Engineering Log
             </CardTitle>
@@ -171,16 +171,16 @@ export default function ReliabilityPage() {
                 { name: "Kafka Leader Election Failover", status: "PASSED", impact: "None", time: "3d ago" },
                 { name: "S3 Bucket Policy Misconfig", status: "FAILED", impact: "Outage (2m)", time: "1w ago" },
               ].map((exp, i) => (
-                <div key={i} className="flex justify-between items-center p-3 border border-white/5 bg-black/40 rounded-lg">
+                <div key={i} className="flex justify-between items-center p-3 border border-black/5 bg-white/60 rounded-lg">
                   <div>
-                    <div className="text-sm font-medium text-white">{exp.name}</div>
-                    <div className="text-xs text-white/50 mt-1">Impact: {exp.impact}</div>
+                    <div className="text-sm font-medium text-slate-800">{exp.name}</div>
+                    <div className="text-xs text-slate-500 mt-1">Impact: {exp.impact}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className={cn("text-[10px] px-2 py-0.5 rounded font-bold tracking-wider", 
                       exp.status === 'PASSED' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                     )}>{exp.status}</span>
-                    <span className="text-[10px] text-white/40">{exp.time}</span>
+                    <span className="text-[10px] text-slate-400">{exp.time}</span>
                   </div>
                 </div>
               ))}
@@ -189,9 +189,9 @@ export default function ReliabilityPage() {
         </Card>
 
         {/* Disaster Recovery Metrics */}
-        <Card className="glass bg-black/20 backdrop-blur-md border-white/10">
+        <Card className="glass bg-white/40 backdrop-blur-md border-black/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-slate-800">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               Disaster Recovery (RTO / RPO)
             </CardTitle>
@@ -199,32 +199,32 @@ export default function ReliabilityPage() {
           <CardContent>
             <div className="space-y-6">
               <div>
-                <div className="flex justify-between text-sm mb-1 text-white">
+                <div className="flex justify-between text-sm mb-1 text-slate-800">
                   <span>Recovery Time Objective (RTO)</span>
                   <span className="font-mono text-green-400">Actual: 4m 12s / Target: 15m</span>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-2">
+                <div className="w-full bg-black/ rounded-full h-2">
                   <div className="bg-green-500 h-2 rounded-full" style={{ width: '28%' }}></div>
                 </div>
               </div>
               
               <div>
-                <div className="flex justify-between text-sm mb-1 text-white">
+                <div className="flex justify-between text-sm mb-1 text-slate-800">
                   <span>Recovery Point Objective (RPO)</span>
                   <span className="font-mono text-amber-400">Actual: 42s / Target: 1m</span>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-2">
+                <div className="w-full bg-black/ rounded-full h-2">
                   <div className="bg-amber-500 h-2 rounded-full" style={{ width: '70%' }}></div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="p-4 border border-white/5 rounded-lg bg-black/40 text-center">
-                  <div className="text-xs text-white/50 mb-1">Last Failover Test</div>
-                  <div className="font-mono text-lg text-white">12 Days Ago</div>
+                <div className="p-4 border border-black/5 rounded-lg bg-white/60 text-center">
+                  <div className="text-xs text-slate-500 mb-1">Last Failover Test</div>
+                  <div className="font-mono text-lg text-slate-800">12 Days Ago</div>
                 </div>
-                <div className="p-4 border border-white/5 rounded-lg bg-black/40 text-center">
-                  <div className="text-xs text-white/50 mb-1">Active Region</div>
+                <div className="p-4 border border-black/5 rounded-lg bg-white/60 text-center">
+                  <div className="text-xs text-slate-500 mb-1">Active Region</div>
                   <div className="font-mono text-lg text-blue-400">us-east-1</div>
                 </div>
               </div>

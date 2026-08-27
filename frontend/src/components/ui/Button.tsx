@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { cn } from "../../lib/utils";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -9,11 +9,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", ...props }, ref) => {
     const variants = {
-      primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-      danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+      primary: "bg-primary text-primary-foreground hover:bg-slate-800",
+      secondary: "bg-secondary text-secondary-foreground hover:bg-slate-300",
+      outline: "border border-input bg-transparent hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300",
+      ghost: "hover:bg-slate-200 hover:text-slate-900",
+      danger: "bg-destructive text-destructive-foreground hover:bg-red-600",
     };
 
     const sizes = {
