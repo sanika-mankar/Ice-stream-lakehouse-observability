@@ -142,6 +142,105 @@ export default function NetworkMeshPage() {
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Service-to-Service Latency Matrix */}
+        <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-purple-400" />
+            Service-to-Service Latency Matrix (p95)
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-center whitespace-nowrap">
+              <thead className="text-xs text-white/50 bg-white/5">
+                <tr>
+                  <th className="p-2 text-left rounded-tl-md">Source \ Target</th>
+                  <th className="p-2">Auth</th>
+                  <th className="p-2">Payments</th>
+                  <th className="p-2">Users DB</th>
+                  <th className="p-2 rounded-tr-md">Orders DB</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                <tr className="hover:bg-white/5">
+                  <td className="p-2 text-left text-xs font-medium text-white/80">API Gateway</td>
+                  <td className="p-2 text-xs font-mono text-green-400">12ms</td>
+                  <td className="p-2 text-xs font-mono text-green-400">45ms</td>
+                  <td className="p-2 text-xs font-mono text-white/30">-</td>
+                  <td className="p-2 text-xs font-mono text-white/30">-</td>
+                </tr>
+                <tr className="hover:bg-white/5">
+                  <td className="p-2 text-left text-xs font-medium text-white/80">Auth</td>
+                  <td className="p-2 text-xs font-mono text-white/30">-</td>
+                  <td className="p-2 text-xs font-mono text-white/30">-</td>
+                  <td className="p-2 text-xs font-mono text-green-400">8ms</td>
+                  <td className="p-2 text-xs font-mono text-white/30">-</td>
+                </tr>
+                <tr className="hover:bg-white/5 bg-red-500/5 border-l-2 border-red-500">
+                  <td className="p-2 text-left text-xs font-medium text-red-400">Payments</td>
+                  <td className="p-2 text-xs font-mono text-green-400">15ms</td>
+                  <td className="p-2 text-xs font-mono text-white/30">-</td>
+                  <td className="p-2 text-xs font-mono text-green-400">18ms</td>
+                  <td className="p-2 text-xs font-mono text-red-400 font-bold animate-pulse">850ms</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10px] text-white/40 mt-3 text-right">* High latency detected between Payments and Orders DB.</p>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          {/* mTLS Certificate Management */}
+          <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              mTLS Certificate Expiration
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs mb-1 text-white/80">
+                  <span>api-gateway-cert (Auto-renews)</span>
+                  <span className="font-mono text-green-400">145 Days Left</span>
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-1.5">
+                  <div className="bg-green-500 h-1.5 rounded-full" style={{ width: '80%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1 text-white/80">
+                  <span>legacy-db-cert (Manual)</span>
+                  <span className="font-mono text-red-400 font-bold">2 Days Left</span>
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-1.5">
+                  <div className="bg-red-500 h-1.5 rounded-full animate-pulse" style={{ width: '5%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rate Limiting & Quotas */}
+          <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md flex-1">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Global Rate Limiting (Envoy)
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-black/40 border border-white/5 rounded-lg text-center">
+                <div className="text-xs text-white/50 mb-1">Tier 1 Tenants</div>
+                <div className="font-mono text-lg text-white">10k <span className="text-[10px] text-white/40">req/s</span></div>
+              </div>
+              <div className="p-3 bg-black/40 border border-white/5 rounded-lg text-center">
+                <div className="text-xs text-white/50 mb-1">Free Tier Tenants</div>
+                <div className="font-mono text-lg text-amber-400">100 <span className="text-[10px] text-white/40">req/s</span></div>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-xs">
+              <span className="text-white/60">Current Global Dropped Requests:</span>
+              <span className="font-mono text-red-400 font-bold">142/s</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
