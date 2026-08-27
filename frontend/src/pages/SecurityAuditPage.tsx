@@ -101,14 +101,100 @@ export default function SecurityAuditPage() {
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* PII Data Access Logs */}
+        <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-400"><path d="M2 12a5 5 0 0 0 5 5 8 8 0 0 1 5 2 8 8 0 0 1 5-2 5 5 0 0 0 5-5V7h-5a8 8 0 0 0-5-2 8 8 0 0 0-5 2H2Z"/></svg>
+            PII Data Access Audit (Last 24h)
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="text-xs text-white/50 uppercase bg-white/5">
+                <tr>
+                  <th className="px-3 py-2 rounded-tl-md">User / Role</th>
+                  <th className="px-3 py-2">Table Accessed</th>
+                  <th className="px-3 py-2">Rows</th>
+                  <th className="px-3 py-2 rounded-tr-md">Justification</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-white/80">
+                <tr className="hover:bg-white/5">
+                  <td className="px-3 py-2 text-xs font-mono">analytics-svc</td>
+                  <td className="px-3 py-2 text-xs">users.profiles (SSN)</td>
+                  <td className="px-3 py-2 text-xs font-mono">1,250</td>
+                  <td className="px-3 py-2 text-xs text-amber-400">Automated Masking Job</td>
+                </tr>
+                <tr className="hover:bg-white/5 bg-red-500/5">
+                  <td className="px-3 py-2 text-xs font-mono text-red-400">j.doe@corp</td>
+                  <td className="px-3 py-2 text-xs">payments.history</td>
+                  <td className="px-3 py-2 text-xs font-mono">5</td>
+                  <td className="px-3 py-2 text-xs text-red-400 font-medium">Flagged: Manual Query</td>
+                </tr>
+                <tr className="hover:bg-white/5">
+                  <td className="px-3 py-2 text-xs font-mono">support-agent-22</td>
+                  <td className="px-3 py-2 text-xs">users.contact</td>
+                  <td className="px-3 py-2 text-xs font-mono">1</td>
+                  <td className="px-3 py-2 text-xs text-white/50">Ticket #99122</td>
+                </tr>
+                <tr className="hover:bg-white/5">
+                  <td className="px-3 py-2 text-xs font-mono">ml-training-job</td>
+                  <td className="px-3 py-2 text-xs">users.behavior</td>
+                  <td className="px-3 py-2 text-xs font-mono">4.2M</td>
+                  <td className="px-3 py-2 text-xs text-white/50">Scheduled Training</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Compliance Status Details */}
+        <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15L11 17L15 13"/></svg>
+            Framework Compliance Details
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1 text-white">
+                <span>SOC 2 Type II</span>
+                <span className="font-mono text-green-400">100% Passed</span>
+              </div>
+              <div className="w-full bg-white/5 rounded-full h-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
+              </div>
+            </div>
+            
+            <div>
+              <div className="flex justify-between text-sm mb-1 text-white">
+                <span>GDPR / CCPA</span>
+                <span className="font-mono text-amber-400">92% (1 Warning)</span>
+              </div>
+              <div className="w-full bg-white/5 rounded-full h-2">
+                <div className="bg-amber-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+              </div>
+              <p className="text-[10px] text-amber-400/80 mt-1">Warning: Data retention policy &gt; 30 days on log bucket.</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-sm mb-1 text-white">
+                <span>HIPAA</span>
+                <span className="font-mono text-green-400">100% Passed</span>
+              </div>
+              <div className="w-full bg-white/5 rounded-full h-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: '100%' }}></div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-white/5">
+              <button className="w-full py-2 bg-blue-500/10 text-blue-400 text-sm font-medium border border-blue-500/20 rounded-md hover:bg-blue-500/20 transition-colors">
+                Generate Auditor Report (PDF)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-// Add compliance score gauges
-
-// Implement active vulnerabilities list
-
-// Integrate IAM activity logs
-
-// Finalize security audit styles
