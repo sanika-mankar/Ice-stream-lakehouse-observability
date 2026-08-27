@@ -8,20 +8,20 @@ import { useStore } from "../lib/store/useStore";
 import { DemoController } from "../components/ui/DemoController";
 
 const CORE_ITEMS = [
-  { name: "Overview", path: "/overview", icon: LayoutDashboard },
-  { name: "Pipeline", path: "/pipeline", icon: Workflow },
-  { name: "Data Quality", path: "/quality", icon: ShieldAlert },
+  { name: "Overview", path: "/console/overview", icon: LayoutDashboard },
+  { name: "Pipeline", path: "/console/pipeline", icon: Workflow },
+  { name: "Data Quality", path: "/console/quality", icon: ShieldAlert },
 ];
 
 const INFRASTRUCTURE_ITEMS = [
-  { name: "Observability", path: "/observability", icon: GitCommit },
-  { name: "Reliability", path: "/reliability", icon: Activity },
-  { name: "Lakehouse", path: "/lakehouse", icon: Database },
-  { name: "Analytics", path: "/analytics", icon: LineChart },
-  { name: "Security Audit", path: "/security", icon: Shield },
-  { name: "Network Mesh", path: "/network", icon: Network },
-  { name: "Cloud Config", path: "/cloud", icon: Cloud },
-  { name: "System", path: "/system", icon: Settings },
+  { name: "Observability", path: "/console/observability", icon: GitCommit },
+  { name: "Reliability", path: "/console/reliability", icon: Activity },
+  { name: "Lakehouse", path: "/console/lakehouse", icon: Database },
+  { name: "Analytics", path: "/console/analytics", icon: LineChart },
+  { name: "Security Audit", path: "/console/security", icon: Shield },
+  { name: "Network Mesh", path: "/console/network", icon: Network },
+  { name: "Cloud Config", path: "/console/cloud", icon: Cloud },
+  { name: "System", path: "/console/system", icon: Settings },
 ];
 
 export default function DashboardLayout() {
