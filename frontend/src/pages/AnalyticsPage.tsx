@@ -133,14 +133,113 @@ export default function AnalyticsPage() {
           </table>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        {/* Query Performance Heatmap */}
+        <div className="glass lg:col-span-2 rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-purple-400" />
+              Query Performance Heatmap (Top 10 Slowest)
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="text-xs text-white/50 uppercase bg-white/5">
+                <tr>
+                  <th className="px-4 py-3 rounded-tl-md">Query Hash</th>
+                  <th className="px-4 py-3">Source Engine</th>
+                  <th className="px-4 py-3">Avg Latency</th>
+                  <th className="px-4 py-3">P99 Latency</th>
+                  <th className="px-4 py-3 rounded-tr-md">Scanned Data</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {[
+                  { hash: "Q-8f92a1b", engine: "Trino", avg: "45.2s", p99: "120.4s", scanned: "4.2 TB", critical: true },
+                  { hash: "Q-2c491xx", engine: "Spark SQL", avg: "12.8s", p99: "45.1s", scanned: "890 GB", critical: false },
+                  { hash: "Q-99p21m1", engine: "Trino", avg: "8.4s", p99: "18.2s", scanned: "120 GB", critical: false },
+                  { hash: "Q-4b2m9z8", engine: "Athena", avg: "6.1s", p99: "14.5s", scanned: "45 GB", critical: false },
+                  { hash: "Q-1x8n3q4", engine: "Spark SQL", avg: "5.5s", p99: "12.1s", scanned: "2.1 TB", critical: false },
+                ].map((row, i) => (
+                  <tr key={i} className="hover:bg-white/5 text-white/80 transition-colors">
+                    <td className="px-4 py-3 font-mono text-white flex items-center gap-2">
+                      {row.critical && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>}
+                      {row.hash}
+                    </td>
+                    <td className="px-4 py-3">{row.engine}</td>
+                    <td className="px-4 py-3 font-mono">{row.avg}</td>
+                    <td className={cn("px-4 py-3 font-mono font-bold", row.critical ? "text-red-400" : "text-amber-400")}>{row.p99}</td>
+                    <td className="px-4 py-3 font-mono">{row.scanned}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          {/* ML Feature Store */}
+          <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><path d="m21 16-7.16-7.16a2.5 2.5 0 0 0-3.68 0L3 16"/><path d="m16 21-3.5-3.5a2.5 2.5 0 0 0-3.5 0L6 21"/></svg>
+              ML Feature Store
+            </h2>
+            <div className="space-y-4 text-sm">
+              <div>
+                <div className="flex justify-between text-white/60 mb-1 text-xs">
+                  <span>Feature Staleness (Avg)</span>
+                  <span className="font-mono text-green-400">4m 12s</span>
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-1.5">
+                  <div className="bg-green-400 h-1.5 rounded-full" style={{ width: '15%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-white/60 mb-1 text-xs">
+                  <span>Online Store Cache Hit Rate</span>
+                  <span className="font-mono text-blue-400">98.4%</span>
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-1.5">
+                  <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: '98%' }}></div>
+                </div>
+              </div>
+              <div className="pt-2">
+                <span className="text-xs text-white/40 block mb-2">Model Drift Alerts</span>
+                <div className="p-2 border border-amber-500/30 bg-amber-500/10 rounded flex justify-between items-center text-amber-400 text-xs">
+                  <span>FraudDetection_v4</span>
+                  <span className="font-bold">Detected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BI Reporting Status */}
+          <div className="glass rounded-xl border border-white/10 p-6 bg-black/20 backdrop-blur-md flex-1">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <BarChart className="w-5 h-5 text-green-400" />
+              BI Report Materialization
+            </h2>
+            <div className="space-y-3">
+              {[
+                { name: "Executive Summary", status: "Ready", time: "10m ago" },
+                { name: "Sales Pipeline Data Mart", status: "Building", time: "45%" },
+                { name: "Marketing Attribution", status: "Ready", time: "1h ago" },
+              ].map((job, i) => (
+                <div key={i} className="flex items-center justify-between p-2 border-b border-white/5 last:border-0 pb-3">
+                  <span className="text-sm text-white/80">{job.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-[10px] uppercase font-bold px-1.5 py-0.5 rounded", 
+                      job.status === 'Ready' ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400 animate-pulse"
+                    )}>{job.status}</span>
+                    <span className="text-[10px] text-white/40 font-mono w-12 text-right">{job.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-// Add business KPI widgets
-
-// Implement revenue bar chart
-
-// Integrate user growth trend
-
-// Add recent sales activity table
