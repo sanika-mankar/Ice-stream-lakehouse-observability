@@ -7,7 +7,7 @@ export default function PipelinePage() {
         <img 
           src="/Pipeline.jpg.png" 
           alt="Pipeline Architecture" 
-          className="w-full h-full object-contain pointer-events-none select-none relative z-10" style={{ mixBlendMode: "screen" }}
+          className="w-full h-full object-contain pointer-events-none select-none relative z-10" style={{ mixBlendMode: 'screen', animation: 'pulse-neon 4s ease-in-out infinite alternate' }}
         />
       </div>
       <style>{`
@@ -15,7 +15,12 @@ export default function PipelinePage() {
           0% { left: -50%; }
           100% { left: 150%; }
         }
-      `}</style>
+      `  @keyframes pulse-neon {
+          0% { filter: brightness(1) contrast(1); }
+          50% { filter: brightness(1.2) contrast(1.1) drop-shadow(0 0 10px rgba(0, 240, 255, 0.1)); }
+          100% { filter: brightness(1) contrast(1); }
+        }
+      }</style>
     </div>
   );
 }
