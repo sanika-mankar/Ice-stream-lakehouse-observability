@@ -24,7 +24,7 @@ export function DemoController() {
       >
         {!isOpen ? (
           <div 
-            className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:bg-primary/90 shadow-lg shadow-primary/20"
+            className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-indigo-600 via-purple-600 to-fuchsia-500 text-white rounded-full hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-300 shadow-lg shadow-indigo-500/20"
             onClick={() => setIsOpen(true)}
             title="Open Demo Controls"
           >
