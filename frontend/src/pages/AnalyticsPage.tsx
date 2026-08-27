@@ -1,7 +1,21 @@
-import { BarChart, LineChart, PieChart, TrendingUp, Users, DollarSign, Activity } from "lucide-react";
+import { BarChart as BarChartIcon, LineChart as LineChartIcon, PieChart, TrendingUp, Users, DollarSign, Activity } from "lucide-react";
 import { cn } from "../lib/utils";
+import { MetricCard } from "../components/ui/MetricCard";
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 export default function AnalyticsPage() {
+  const revenueData = [
+    { name: 'Jan', value: 40 }, { name: 'Feb', value: 70 }, { name: 'Mar', value: 45 },
+    { name: 'Apr', value: 90 }, { name: 'May', value: 65 }, { name: 'Jun', value: 85 },
+    { name: 'Jul', value: 120 }, { name: 'Aug', value: 100 }, { name: 'Sep', value: 140 },
+    { name: 'Oct', value: 110 }, { name: 'Nov', value: 130 }, { name: 'Dec', value: 150 }
+  ];
+  const userGrowthData = [
+    { name: 'Week 1', users: 1200 }, { name: 'Week 2', users: 1900 }, { name: 'Week 3', users: 1500 },
+    { name: 'Week 4', users: 2800 }, { name: 'Week 5', users: 3400 }, { name: 'Week 6', users: 3100 },
+    { name: 'Week 7', users: 4500 }
+  ];
+
   return (
     <div className="p-6 md:p-8 space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -23,69 +37,91 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total Revenue", value: "$45,231.89", trend: "+20.1%", icon: DollarSign },
-          { label: "Active Users", value: "+2350", trend: "+180.1%", icon: Users },
-          { label: "Sales", value: "+12,234", trend: "+19%", icon: Activity },
-          { label: "Active Now", value: "+573", trend: "+201 since last hour", icon: TrendingUp }
-        ].map((stat, i) => (
-          <div key={i} className="glass p-5 rounded-xl border border-border/50 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{stat.trend} from last month</p>
-            </div>
-          </div>
-        ))}
+        <MetricCard
+          title="Total Revenue"
+          value="$45,231.89"
+          trend="up"
+          trendValue="+20.1%"
+          icon={DollarSign}
+          statusColor="text-blue-500"
+        />
+        <MetricCard
+          title="Active Users"
+          value="2,350"
+          trend="up"
+          trendValue="+180.1%"
+          icon={Users}
+          statusColor="text-purple-500"
+        />
+        <MetricCard
+          title="Sales"
+          value="12,234"
+          trend="up"
+          trendValue="+19%"
+          icon={Activity}
+          statusColor="text-green-500"
+        />
+        <MetricCard
+          title="Active Now"
+          value="573"
+          trend="up"
+          trendValue="+201"
+          icon={TrendingUp}
+          statusColor="text-orange-500"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass rounded-xl border border-border/50 p-6 flex flex-col h-80">
+        <div className="glass rounded-xl border border-black/10 p-6 flex flex-col h-[400px] bg-white/40">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Revenue Overview</h2>
-            <BarChart className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-slate-800">Revenue Overview</h2>
+            <BarChartIcon className="h-5 w-5 text-slate-500" />
           </div>
-          <div className="flex-1 flex items-end gap-2 pt-4">
-            {[40, 70, 45, 90, 65, 85, 120, 100, 140, 110, 130, 150].map((h, i) => (
-              <div key={i} className="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-colors relative group" style={{ height: `${(h / 150) * 100}%` }}>
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  ${h}k
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-muted-foreground mt-4">
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+          <div className="flex-1 w-full mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.9}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <RechartsTooltip 
+                  cursor={{ fill: '#f1f5f9' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="value" fill="url(#colorRevenue)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="glass rounded-xl border border-border/50 p-6 flex flex-col h-80">
+        <div className="glass rounded-xl border border-black/10 p-6 flex flex-col h-[400px] bg-white/40">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">User Growth Trend</h2>
-            <LineChart className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-slate-800">User Growth Trend</h2>
+            <LineChartIcon className="h-5 w-5 text-slate-500" />
           </div>
-          {/* Simulated line chart with SVG */}
-          <div className="flex-1 relative w-full h-full">
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path 
-                d="M 0,100 L 0,80 Q 20,90 30,60 T 60,40 T 80,20 L 100,10 L 100,100 Z" 
-                fill="currentColor" 
-                className="text-primary/10" 
-              />
-              <path 
-                d="M 0,80 Q 20,90 30,60 T 60,40 T 80,20 L 100,10" 
-                fill="none" 
-                stroke="currentColor" 
-                className="text-primary" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-              />
-              <circle cx="80" cy="20" r="3" fill="currentColor" className="text-primary" />
-              <circle cx="30" cy="60" r="3" fill="currentColor" className="text-primary" />
-            </svg>
+          <div className="flex-1 w-full mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={userGrowthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <RechartsTooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Area type="monotone" dataKey="users" stroke="#10b981" strokeWidth={3} fill="url(#colorUsers)" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
