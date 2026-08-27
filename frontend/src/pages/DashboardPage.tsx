@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import { MetricCard } from "../components/ui/MetricCard";
 import { StatusBadge } from "../components/ui/StatusBadge";
@@ -53,7 +53,7 @@ export default function DashboardPage() {
           value={metrics.kafkaLag.toLocaleString()}
           icon={Activity}
           trend={metrics.kafkaLag > 500 ? "up" : "stable"}
-          statusColor={metrics.kafkaLag > 500 ? "text-amber-500" : "text-slate-400"}
+          statusColor={metrics.kafkaLag > 500 ? "text-amber-500" : "text-orange-400"}
         />
         <MetricCard
           title="Error Rate"
@@ -78,47 +78,25 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Pipeline Health Flowchart */}
-        <Card className="glass col-span-1 lg:col-span-2 flex flex-col">
-          <CardHeader className="border-b border-black/5 bg-black/">
-            <CardTitle className="flex items-center gap-2 text-slate-800">
-              <Network className="w-5 h-5 text-blue-500" />
-              Pipeline Telemetry Flow
+        <Card className="glass col-span-1 lg:col-span-2 flex flex-col relative overflow-hidden group">
+          <CardHeader className="border-b border-black/5 bg-black/5 relative z-10">
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-slate-800">
+                <Network className="w-5 h-5 text-blue-500" />
+                Pipeline Telemetry Flow
+              </span>
+              <StatusBadge status={status === 'HEALTHY' ? 'HEALTHY' : 'WARNING'} />
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-            {/* Background Grid Pattern */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-            
-            <div className="flex items-center space-x-2 w-full max-w-3xl justify-between relative z-10">
-              {[
-                { name: 'INGEST', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-                { name: 'PROCESS', color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-                { name: 'VALIDATE', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
-                { name: 'SERVE', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' }
-              ].map((stage, idx, arr) => (
-                <React.Fragment key={stage.name}>
-                  <div className="flex flex-col items-center gap-3 group">
-                    <div className={cn("h-16 w-16 rounded-xl border flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-sm", stage.bg, stage.border)}>
-                      <Activity className={cn("h-6 w-6", stage.color)} />
-                    </div>
-                    <span className="font-bold text-xs tracking-widest text-slate-700">{stage.name}</span>
-                    <StatusBadge status={status === 'HEALTHY' ? 'HEALTHY' : 'WARNING'} className="scale-90" />
-                  </div>
-                  {idx < arr.length - 1 && (
-                    <div className="flex-1 h-[2px] bg-slate-200 relative overflow-visible">
-                       {/* Animated flow dots */}
-                       <div className="absolute top-1/2 left-0 w-full h-[2px] -translate-y-1/2 overflow-hidden">
-                          <div className={cn("w-1/3 h-full animate-[pulse_1s_ease-in-out_infinite]", stage.color.replace('text-', 'bg-'))} />
-                       </div>
-                       {/* Directional Arrow */}
-                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-300 bg-[var(--color-background)] px-1">
-                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                       </div>
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+          <CardContent className="flex-1 p-0 relative bg-white/40">
+            {/* The sketched image */}
+            <img
+              src="/pipeline_sketch.jpg"
+              alt="Data Pipeline Architecture Sketch"
+              className="w-full h-full object-cover mix-blend-multiply opacity-90 transition-all duration-700 group-hover:opacity-100 group-hover:scale-[1.02]"
+            />
+            {/* Optional overlay gradient for better integration */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-transparent pointer-events-none" />
           </CardContent>
         </Card>
 
@@ -142,7 +120,7 @@ export default function DashboardPage() {
                   className="flex gap-3 p-3 rounded-lg border border-black/5 bg-black/ hover:bg-white/80 shadow-sm transition-colors"
                 >
                   <div className="mt-0.5 flex-shrink-0">
-                     <StatusBadge status={event.severity} />
+                    <StatusBadge status={event.severity} />
                   </div>
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
@@ -220,15 +198,15 @@ export default function DashboardPage() {
                 <div className="text-2xl font-bold font-mono text-blue-500">&lt; 2s</div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <button className="w-full py-2.5 px-4 bg-white/60 hover:bg-white border border-black/5 shadow-sm rounded-lg text-sm text-left font-semibold text-slate-700 transition-all flex items-center justify-between group">
                 <span>View Full Incident Report</span>
-                <svg className="text-slate-400 group-hover:text-slate-700 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+                <svg className="text-slate-400 group-hover:text-slate-700 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>
               </button>
               <button className="w-full py-2.5 px-4 bg-white/60 hover:bg-white border border-black/5 shadow-sm rounded-lg text-sm text-left font-semibold text-slate-700 transition-all flex items-center justify-between group">
                 <span>Configure Alert Thresholds</span>
-                <svg className="text-slate-400 group-hover:text-slate-700 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+                <svg className="text-slate-400 group-hover:text-slate-700 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>
               </button>
             </div>
           </CardContent>
