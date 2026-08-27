@@ -15,6 +15,8 @@ import NetworkMeshPage from "./pages/NetworkMeshPage";
 import CloudConfigPage from "./pages/CloudConfigPage";
 import { useStore } from "./lib/store/useStore";
 
+import LandingPage from "./pages/LandingPage";
+
 function App() {
   const simulateTick = useStore(state => state.simulateTick);
 
@@ -28,8 +30,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardLayout />}>
-          <Route index element={<Navigate to="/overview" replace />} />
+        {/* Public Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Existing Application Console */}
+        <Route path="/console" element={<DashboardLayout />}>
+          <Route index element={<Navigate to="/console/overview" replace />} />
           <Route path="overview" element={<DashboardPage />} />
           <Route path="pipeline/*" element={<PipelinePage />} />
           <Route path="quality/*" element={<QualityPage />} />
@@ -43,6 +49,9 @@ function App() {
           <Route path="system/*" element={<SystemPage />} />
           <Route path="*" element={<div className="p-8">404 Not Found</div>} />
         </Route>
+
+        {/* Catch-all for legacy paths like /quality to redirect to root or show 404 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
