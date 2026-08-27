@@ -10,6 +10,12 @@ export default function PipelinePage() {
           className="w-full h-full object-contain pointer-events-none select-none relative z-10" style={{ mixBlendMode: "screen" }}
         />
       </div>
+      <style>{`
+        @keyframes scan {
+          0% { left: -50%; }
+          100% { left: 150%; }
+        }
+      `}</style>
     </div>
   );
 }
