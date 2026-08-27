@@ -11,7 +11,6 @@ export function CustomEdge({
   sourcePosition,
   targetPosition,
   style = {},
-  markerEnd,
   data,
 }: EdgeProps) {
   const [edgePath] = getBezierPath({
