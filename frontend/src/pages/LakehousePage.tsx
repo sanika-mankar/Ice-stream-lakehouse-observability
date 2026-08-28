@@ -12,7 +12,7 @@ export default function LakehousePage() {
   const [compareTarget, setCompareTarget] = useState<IcebergSnapshot | null>(snapshots[1] || null);
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 font-georgia">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Lakehouse & Time Travel</h1>
         <p className="text-muted-foreground">Inspect Iceberg table snapshots and travel back in time to compare states.</p>
