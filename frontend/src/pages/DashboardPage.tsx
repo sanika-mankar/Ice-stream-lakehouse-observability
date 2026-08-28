@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import { MetricCard } from "../components/ui/MetricCard";
 import { StatusBadge } from "../components/ui/StatusBadge";
@@ -11,7 +11,7 @@ export default function DashboardPage() {
   const { status, metrics, quality, activityFeed } = useStore();
 
   return (
-    <div className="p-6 md:p-8 space-y-6 animate-in fade-in duration-500 pb-20 min-h-screen rounded-tl-2xl">
+    <div className="p-6 md:p-8 space-y-6 animate-in fade-in duration-500 pb-20 min-h-screen rounded-tl-2xl font-georgia">
       <div className="flex flex-col gap-1">
         <h1 className="text-4xl font-bold tracking-tight text-slate-800">Command Center</h1>
         <p className="text-slate-500 text-sm font-medium">Real-time observability and holistic pipeline health monitoring.</p>
