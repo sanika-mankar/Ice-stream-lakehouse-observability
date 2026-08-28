@@ -3,7 +3,7 @@ import { cn } from "../lib/utils";
 
 export default function SecurityAuditPage() {
   return (
-    <div className="p-6 md:p-8 space-y-8 pb-20">
+    <div className="p-6 md:p-8 space-y-8 pb-20 font-georgia">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Security & Compliance</h1>
