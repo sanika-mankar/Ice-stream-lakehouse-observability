@@ -22,7 +22,7 @@ export default function ReliabilityPage() {
   }, [incidents, search]);
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500 relative">
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 relative font-georgia">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Reliability & Incidents</h1>
         <p className="text-muted-foreground">Manage system incidents and monitor circuit breaker health.</p>
