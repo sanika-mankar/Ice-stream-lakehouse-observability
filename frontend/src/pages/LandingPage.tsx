@@ -27,7 +27,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-blue-500/30 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground selection:bg-blue-500/30 font-georgia overflow-x-hidden">
       <LandingNavbar />
       
       <main>
