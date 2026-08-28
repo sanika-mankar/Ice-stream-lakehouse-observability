@@ -58,6 +58,9 @@
 @utility font-serif {
   font-family: 'Playfair Display', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
+@utility font-georgia {
+  font-family: Georgia, serif;
+}
 @utility font-mono {
   font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
