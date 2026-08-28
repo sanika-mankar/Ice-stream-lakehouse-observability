@@ -56,7 +56,7 @@
 }
 
 @utility font-serif {
-  font-family: 'Playfair Display', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
 }
 @utility font-georgia {
   font-family: Georgia, serif;
