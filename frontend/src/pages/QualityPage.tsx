@@ -11,7 +11,7 @@ export default function QualityPage() {
   const { quality } = useStore();
 
   return (
-    <div className="p-6 md:p-8 space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="p-6 md:p-8 space-y-6 animate-in fade-in duration-500 pb-20 font-georgia">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">Data Quality Center</h1>
