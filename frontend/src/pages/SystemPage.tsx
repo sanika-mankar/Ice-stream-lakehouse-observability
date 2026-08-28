@@ -9,7 +9,7 @@ export default function SystemPage() {
   const { services, simulateTick, injectSchemaFailure, triggerRecovery, openCircuitBreaker } = useStore();
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-8 space-y-8 animate-in fade-in duration-500 font-georgia">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">System Infrastructure</h1>
         <p className="text-muted-foreground">Monitor the underlying nodes and services powering Ice Stream.</p>
