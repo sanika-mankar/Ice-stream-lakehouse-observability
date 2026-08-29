@@ -83,3 +83,15 @@ def get_snapshots():
         "message": "SIMULATION: Iceberg snapshots backend not connected.",
         "snapshots": []
     }
+
+@router.get("/system", response_model=Dict[str, Any])
+def get_system():
+    """
+    Contract for /api/system endpoint.
+    """
+    return {
+        "message": "SIMULATION: System backend not connected.",
+        "health": "HEALTHY",
+        "services": [],
+        "circuit_breakers": []
+    }
