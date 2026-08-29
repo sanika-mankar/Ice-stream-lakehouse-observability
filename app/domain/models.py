@@ -112,3 +112,19 @@ class IcebergSnapshot(BaseModel):
     records: int
     operation: str
     summary: str
+
+class ServiceHealth(BaseModel):
+    id: str
+    name: str
+    status: SystemStatus
+    latency_ms: int = Field(alias="latencyMs")
+    uptime_percentage: float = Field(alias="uptimePercentage")
+    current_load: float = Field(alias="currentLoad")
+    last_heartbeat: str = Field(alias="lastHeartbeat")
+
+class CircuitBreakerState(BaseModel):
+    service_id: str = Field(alias="serviceId")
+    is_open: bool = Field(alias="isOpen")
+    failure_rate: float = Field(alias="failureRate")
+    last_failure: str = Field(alias="lastFailure")
+    opened_at: Optional[str] = Field(None, alias="openedAt")
