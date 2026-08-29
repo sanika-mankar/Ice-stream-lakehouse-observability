@@ -41,3 +41,21 @@ A WebSocket connection at **`ws://<host>/api/ws`** has been scaffolded (`app/api
 - `SERVICE_STATUS_CHANGED`
 
 These events will allow the React frontend to update the UI reactively without aggressive polling.
+
+## 3. Proposed Architecture & Findings
+
+The backend architecture is designed to support high-throughput, low-latency data processing and robust observability.
+
+**Technology Stack & Flow:**
+1. **Event Generator (Python)**: Generates synthetic transactions and events.
+2. **Message Broker (Kafka)**: Buffers incoming events to decouple ingestion from processing.
+3. **Stream Processor (Flink)**: Consumes from Kafka, applies validation logic (data quality checks, circuit breakers), and routes data.
+4. **Data Lakehouse (Iceberg)**: Stores validated data and DLQ records with support for time-travel queries.
+5. **API Layer (FastAPI)**: Serves as the gateway for the React frontend, exposing REST endpoints for historical data and WebSockets for real-time updates.
+
+**Key Findings:**
+- The frontend is thoroughly decoupled from backend implementations but heavily relies on the structure defined in `frontend/src/lib/types/index.ts`. 
+- The Python domain models (`app/domain/models.py`) precisely mirror these TypeScript interfaces.
+- Replacing the mock data will require updating the Zustand store's initialization and adding a WebSocket listener hook that mutates the store upon receiving events.
+
+The contract is now established. The next phase (MASTER 2) will focus on spinning up the real infrastructure (Kafka) and bridging the Python generator to it.
