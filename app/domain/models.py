@@ -59,3 +59,36 @@ class QualityViolation(BaseModel):
     severity: str
     count: int
     timestamp: str
+
+class PipelineMetric(BaseModel):
+    throughput: float
+    latency: float
+    error_rate: float = Field(alias="errorRate")
+    processed: int
+    errors: int
+
+class IncidentSeverity(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+class IncidentStatus(str, Enum):
+    OPEN = "OPEN"
+    INVESTIGATING = "INVESTIGATING"
+    MITIGATING = "MITIGATING"
+    RECOVERING = "RECOVERING"
+    RESOLVED = "RESOLVED"
+
+class Incident(BaseModel):
+    id: str
+    severity: IncidentSeverity
+    status: IncidentStatus
+    started_at: str = Field(alias="startedAt")
+    resolved_at: Optional[str] = Field(None, alias="resolvedAt")
+    duration: Optional[str] = None
+    error_rate: float = Field(alias="errorRate")
+    threshold: float
+    affected_component: str = Field(alias="affectedComponent")
+    root_cause: str = Field(alias="rootCause")
+    description: str
