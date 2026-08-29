@@ -41,3 +41,25 @@ def get_pipeline():
         "edges": [],
         "status": "HEALTHY"
     }
+
+@router.get("/quality", response_model=Dict[str, Any])
+def get_quality():
+    """
+    Contract for /api/quality endpoint.
+    """
+    return {
+        "message": "SIMULATION: Quality backend not connected.",
+        "metrics": {},
+        "recent_violations": []
+    }
+
+@router.get("/incidents", response_model=Dict[str, Any])
+def get_incidents():
+    """
+    Contract for /api/incidents endpoint.
+    """
+    return {
+        "message": "SIMULATION: Incidents backend not connected.",
+        "active_incidents": [],
+        "past_incidents": []
+    }
