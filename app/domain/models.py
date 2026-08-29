@@ -128,3 +128,19 @@ class CircuitBreakerState(BaseModel):
     failure_rate: float = Field(alias="failureRate")
     last_failure: str = Field(alias="lastFailure")
     opened_at: Optional[str] = Field(None, alias="openedAt")
+
+class WebSocketEventType(str, Enum):
+    PIPELINE_STATUS_CHANGED = "PIPELINE_STATUS_CHANGED"
+    QUALITY_ALERT = "QUALITY_ALERT"
+    CIRCUIT_BREAKER_OPENED = "CIRCUIT_BREAKER_OPENED"
+    CIRCUIT_BREAKER_CLOSED = "CIRCUIT_BREAKER_CLOSED"
+    DLQ_RECORD_ADDED = "DLQ_RECORD_ADDED"
+    INCIDENT_CREATED = "INCIDENT_CREATED"
+    INCIDENT_RESOLVED = "INCIDENT_RESOLVED"
+    METRIC_UPDATED = "METRIC_UPDATED"
+    SERVICE_STATUS_CHANGED = "SERVICE_STATUS_CHANGED"
+
+class WebSocketEvent(BaseModel):
+    type: WebSocketEventType
+    timestamp: str
+    payload: Dict[str, Any]
