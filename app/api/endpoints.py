@@ -63,3 +63,23 @@ def get_incidents():
         "active_incidents": [],
         "past_incidents": []
     }
+
+@router.get("/dlq", response_model=Dict[str, Any])
+def get_dlq():
+    """
+    Contract for /api/dlq endpoint.
+    """
+    return {
+        "message": "SIMULATION: DLQ backend not connected.",
+        "records": []
+    }
+
+@router.get("/snapshots", response_model=Dict[str, Any])
+def get_snapshots():
+    """
+    Contract for /api/snapshots endpoint.
+    """
+    return {
+        "message": "SIMULATION: Iceberg snapshots backend not connected.",
+        "snapshots": []
+    }
