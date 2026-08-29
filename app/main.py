@@ -21,4 +21,7 @@ def read_root():
     return {"message": "Welcome to Ice Stream Backend API"}
 
 from app.api.endpoints import router as api_router
+from app.api.websockets import router as ws_router
+
 app.include_router(api_router, prefix="/api")
+app.include_router(ws_router, prefix="/api")
