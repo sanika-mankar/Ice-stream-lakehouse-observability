@@ -92,3 +92,23 @@ class Incident(BaseModel):
     affected_component: str = Field(alias="affectedComponent")
     root_cause: str = Field(alias="rootCause")
     description: str
+
+class DLQRecord(BaseModel):
+    id: str
+    timestamp: str
+    event_id: str = Field(alias="eventId")
+    transaction_id: str = Field(alias="transactionId")
+    rule_id: str = Field(alias="ruleId")
+    field: str
+    expected: str
+    actual: str
+    source: str
+    schema_version: str = Field(alias="schemaVersion")
+    severity: str
+
+class IcebergSnapshot(BaseModel):
+    id: str
+    timestamp: str
+    records: int
+    operation: str
+    summary: str
