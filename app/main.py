@@ -19,3 +19,6 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Ice Stream Backend API"}
+
+from app.api.endpoints import router as api_router
+app.include_router(api_router, prefix="/api")
