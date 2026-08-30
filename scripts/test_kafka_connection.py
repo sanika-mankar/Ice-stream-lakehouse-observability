@@ -10,6 +10,11 @@ except ImportError:
     print("Please install it using: pip install confluent-kafka")
     sys.exit(1)
 
+try:
+    import certifi
+except ImportError:
+    certifi = None
+
 def test_connection():
     """Test Kafka connectivity and authentication."""
     print("--- Ice Stream Kafka Connectivity Test ---")
@@ -44,6 +49,14 @@ def test_connection():
             conf['sasl.username'] = sasl_username
         if sasl_password:
             conf['sasl.password'] = sasl_password
+            
+        ca_path = os.path.join("secrets", "ca.pem")
+        if os.path.exists(ca_path):
+            print(f"Using local CA certificate at {ca_path}")
+            conf['ssl.ca.location'] = ca_path
+        elif certifi:
+            print("Using certifi for CA certificates")
+            conf['ssl.ca.location'] = certifi.where()
 
     def delivery_report(err, msg):
         """Called once for each message produced to indicate delivery result."""
@@ -68,10 +81,15 @@ def test_connection():
         
         # Wait for any outstanding messages to be delivered
         print("Waiting for delivery confirmation...")
-        producer.flush(timeout=10.0)
+        remaining = producer.flush(timeout=10.0)
         
+        if remaining > 0:
+            print(f"\n[FAILED] Failed to deliver message. {remaining} messages remaining in queue.")
+            sys.exit(1)
+            
         print("\n=== TEST PASSED ===")
         print("Kafka connection, authentication, and topic availability verified successfully.")
+
         
     except Exception as e:
         print(f"\n[FAILED] Connection error: {e}")

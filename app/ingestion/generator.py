@@ -42,6 +42,17 @@ class TransactionGenerator:
         self.error_rate = error_rate
         self.source_name = source_name
         self.schema_version = schema_version
+        
+        self.metrics = {
+            "generated": 0,
+            "errors_injected": 0,
+            "error_types": {
+                "missing_field": 0,
+                "negative_price": 0,
+                "invalid_status": 0,
+                "invalid_type": 0
+            }
+        }
 
         self.products = [
             ("PROD-001", "Laptop", 1200.00),
@@ -109,6 +120,9 @@ class TransactionGenerator:
             # Set a string where an int is expected
             data["quantity"] = "three"
 
+        self.metrics["errors_injected"] += 1
+        self.metrics["error_types"][error_type] += 1
+
         return data
 
     def generate_event(self) -> dict[str, Any]:
@@ -121,6 +135,8 @@ class TransactionGenerator:
 
         if self.random.random() < self.error_rate:
             data = self._inject_error(data)
+
+        self.metrics["generated"] += 1
 
         return data
 
