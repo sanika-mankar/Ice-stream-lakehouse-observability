@@ -13,6 +13,7 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import SecurityAuditPage from "./pages/SecurityAuditPage";
 import NetworkMeshPage from "./pages/NetworkMeshPage";
 import CloudConfigPage from "./pages/CloudConfigPage";
+import ContactUsPage from "./pages/ContactUsPage";
 import { useStore } from "./lib/store/useStore";
 
 import LandingPage from "./pages/LandingPage";
@@ -47,6 +48,7 @@ function App() {
           <Route path="network/*" element={<NetworkMeshPage />} />
           <Route path="cloud/*" element={<CloudConfigPage />} />
           <Route path="system/*" element={<SystemPage />} />
+          <Route path="contact" element={<ContactUsPage />} />
           <Route path="*" element={<div className="p-8">404 Not Found</div>} />
         </Route>
 

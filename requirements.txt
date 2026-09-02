@@ -22,3 +22,6 @@ python-dotenv>=1.0.0
 # Optional: Dashboard enhancements (install with: pip install ".[dashboard]")
 # plotly>=5.17.0
 # altair>=5.0.0
+# API Backend
+fastapi
+uvicorn
