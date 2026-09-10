@@ -36,6 +36,7 @@ from pyflink.datastream.functions import MapFunction, KeyedProcessFunction, Proc
 from pyflink.datastream.state import ValueStateDescriptor, StateTtlConfig
 from pyflink.common.typeinfo import Types
 from pyflink.datastream.window import TumblingProcessingTimeWindows
+import urllib.request
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -150,10 +151,22 @@ def main():
     env = StreamExecutionEnvironment.get_execution_environment()
     
     # Configure Flink environment
+    jar_dir = os.path.join(os.getcwd(), "flink", "lib")
+    os.makedirs(jar_dir, exist_ok=True)
+    jar_name = "flink-sql-connector-kafka-3.1.0-1.18.jar"
+    local_jar_path = os.path.join(jar_dir, jar_name)
+    
+    if not os.path.exists(local_jar_path):
+        url = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.1.0-1.18/flink-sql-connector-kafka-3.1.0-1.18.jar"
+        logger.info(f"Downloading {jar_name}...")
+        urllib.request.urlretrieve(url, local_jar_path)
+        logger.info("Download complete.")
+
     jar_path = "file:///opt/flink/lib/flink-sql-connector-kafka-3.1.0-1.18.jar"
     if not os.path.exists("/opt/flink/lib/flink-sql-connector-kafka-3.1.0-1.18.jar"):
         # Local development fallback
-        jar_path = f"file://{os.path.abspath('flink/lib/flink-sql-connector-kafka-3.1.0-1.18.jar')}"
+        jar_uri = f"file:///{local_jar_path.replace(chr(92), '/')}"
+        jar_path = jar_uri
     env.add_jars(jar_path)
 
     env.set_parallelism(int(os.getenv("FLINK_PARALLELISM", "1")))
