@@ -116,20 +116,25 @@ class MetricsWindowFunction(ProcessWindowFunction):
         valid = 0
         invalid = 0
         
-        for e_str in elements:
-            e = json.loads(e_str)
-            count += 1
-            if e["is_valid"]:
-                valid += 1
-            else:
+        for item in elements:
+            try:
+                raw = item[1] if isinstance(item, (tuple, list)) else item
+                e = json.loads(raw) if isinstance(raw, str) else raw
+                count += 1
+                if e.get("is_valid", False):
+                    valid += 1
+                else:
+                    invalid += 1
+            except Exception:
+                count += 1
                 invalid += 1
                 
         error_rate = invalid / count if count > 0 else 0.0
         quality_score = (valid / count) * 100 if count > 0 else 0.0
         window_size_seconds = (context.window().end - context.window().start) / 1000
-        throughput = count / window_size_seconds
+        throughput = count / window_size_seconds if window_size_seconds > 0 else 0.0
         
-        log_msg = (f"[METRICS] Window: {window_size_seconds}s | Processed: {count} | "
+        log_msg = (f"[METRICS] Window: {window_size_seconds:.0f}s | Processed: {count} | "
                    f"Valid: {valid} | Invalid: {invalid} | Error Rate: {error_rate:.2%} | "
                    f"Quality Score: {quality_score:.1f}/100 | Throughput: {throughput:.1f} events/sec")
         yield log_msg
@@ -248,9 +253,9 @@ def main():
     bad_stream.map(lambda x: f"[BAD STREAM] event_id={json.loads(x)['event_id']} errors={json.loads(x)['payload']['errors']}").print()
 
     metrics_stream = dedup_stream \
-        .map(lambda x: ("global", x)) \
-        .key_by(lambda x: x[0]) \
-        .window(TumblingProcessingTimeWindows.of(Time.seconds(int(os.getenv("QUALITY_WINDOW_SECONDS", "5"))))) \
+        .map(lambda x: ("global", x), output_type=Types.TUPLE([Types.STRING(), Types.STRING()])) \
+        .key_by(lambda x: x[0], key_type=Types.STRING()) \
+        .window(TumblingProcessingTimeWindows.of(Time.seconds(int(os.getenv("QUALITY_WINDOW_SECONDS", "10"))))) \
         .process(MetricsWindowFunction(), output_type=Types.STRING())
         
     metrics_stream.print()
