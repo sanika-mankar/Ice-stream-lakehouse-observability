@@ -32,6 +32,7 @@ from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitial
 from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common.watermark_strategy import WatermarkStrategy, TimestampAssigner
 from pyflink.common.time import Time
+from pyflink.common import Duration
 from pyflink.datastream.functions import MapFunction, KeyedProcessFunction, ProcessWindowFunction
 from pyflink.datastream.state import ValueStateDescriptor, StateTtlConfig
 from pyflink.common.typeinfo import Types
@@ -212,10 +213,12 @@ def main():
             except Exception:
                 props["ssl.truststore.location"] = clean_ca
 
+    starting_offsets = KafkaOffsetsInitializer.earliest() if os.getenv("KAFKA_STARTING_OFFSETS", "earliest").lower() == "earliest" else KafkaOffsetsInitializer.latest()
+
     kafka_source = KafkaSource.builder() \
         .set_properties(props) \
         .set_topics(topic) \
-        .set_starting_offsets(KafkaOffsetsInitializer.latest()) \
+        .set_starting_offsets(starting_offsets) \
         .set_value_only_deserializer(SimpleStringSchema()) \
         .build()
 
@@ -227,7 +230,7 @@ def main():
 
     parsed_stream = stream.map(ValidateAndParseMap(), output_type=Types.STRING())
 
-    watermark_strategy = WatermarkStrategy.for_bounded_out_of_orderness(Time.seconds(5)) \
+    watermark_strategy = WatermarkStrategy.for_bounded_out_of_orderness(Duration.of_seconds(5)) \
         .with_timestamp_assigner(TransactionTimestampAssigner())
     
     timestamped_stream = parsed_stream.assign_timestamps_and_watermarks(watermark_strategy)
