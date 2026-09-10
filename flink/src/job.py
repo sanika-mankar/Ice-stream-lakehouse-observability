@@ -42,6 +42,17 @@ import urllib.request
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
+VERIFICATION_FILE = os.path.abspath(os.path.join(str(repo_root), "data", "flink_verification.log"))
+
+def append_to_verification_log(line: str):
+    try:
+        os.makedirs(os.path.dirname(VERIFICATION_FILE), exist_ok=True)
+        with open(VERIFICATION_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+            f.flush()
+    except Exception:
+        pass
+
 class ValidateAndParseMap(MapFunction):
     def __init__(self):
         self.engine = None
@@ -249,8 +260,27 @@ def main():
     good_stream = dedup_stream.filter(lambda x: json.loads(x)["is_valid"])
     bad_stream = dedup_stream.filter(lambda x: not json.loads(x)["is_valid"])
 
-    good_stream.map(lambda x: f"[GOOD STREAM] event_id={json.loads(x)['event_id']}").print()
-    bad_stream.map(lambda x: f"[BAD STREAM] event_id={json.loads(x)['event_id']} errors={json.loads(x)['payload']['errors']}").print()
+    def log_good(x):
+        d = json.loads(x)
+        msg = f"[VALID STREAM] event_id={d.get('event_id')}"
+        append_to_verification_log(msg)
+        print(msg)
+        return msg
+
+    def log_bad(x):
+        d = json.loads(x)
+        msg = f"[INVALID STREAM] event_id={d.get('event_id')} errors={d.get('payload', {}).get('errors')}"
+        append_to_verification_log(msg)
+        print(msg)
+        return msg
+
+    def log_metric(m):
+        append_to_verification_log(m)
+        print(m)
+        return m
+
+    good_stream.map(log_good, output_type=Types.STRING()).print()
+    bad_stream.map(log_bad, output_type=Types.STRING()).print()
 
     metrics_stream = dedup_stream \
         .map(lambda x: ("global", x), output_type=Types.TUPLE([Types.STRING(), Types.STRING()])) \
@@ -258,10 +288,34 @@ def main():
         .window(TumblingProcessingTimeWindows.of(Time.seconds(int(os.getenv("QUALITY_WINDOW_SECONDS", "10"))))) \
         .process(MetricsWindowFunction(), output_type=Types.STRING())
         
-    metrics_stream.print()
+    metrics_stream.map(log_metric, output_type=Types.STRING()).print()
+
+    import threading
+    import time
+    
+    os.makedirs(os.path.dirname(VERIFICATION_FILE), exist_ok=True)
+    with open(VERIFICATION_FILE, "w", encoding="utf-8") as f:
+        f.write(f"--- Flink Quality Engine Stream Started: {datetime.now(timezone.utc).isoformat()} ---\n")
+
+    def live_tail():
+        try:
+            with open(VERIFICATION_FILE, "r", encoding="utf-8") as f:
+                while True:
+                    line = f.readline()
+                    if line:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
+                    else:
+                        time.sleep(0.1)
+        except Exception:
+            pass
+
+    tailer = threading.Thread(target=live_tail, daemon=True)
+    tailer.start()
 
     logger.info("Executing Flink Job...")
     env.execute("IceStream-Quality-Engine")
 
 if __name__ == '__main__':
     main()
+
