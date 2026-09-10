@@ -190,13 +190,27 @@ def main():
         props["sasl.mechanism"] = os.getenv("KAFKA_SASL_MECHANISMS", "PLAIN")
         sasl_mechanism = os.getenv("KAFKA_SASL_MECHANISMS", "PLAIN")
         if sasl_mechanism.startswith("SCRAM"):
-            props["sasl.jaas.config"] = f"org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{os.getenv('KAFKA_SASL_USERNAME')}\" password=\"{os.getenv('KAFKA_SASL_PASSWORD')}\";"
+            props["sasl.jaas.config"] = f"org.apache.flink.kafka.shaded.org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{os.getenv('KAFKA_SASL_USERNAME')}\" password=\"{os.getenv('KAFKA_SASL_PASSWORD')}\";"
         else:
-            props["sasl.jaas.config"] = f"org.apache.kafka.common.security.plain.PlainLoginModule required username=\"{os.getenv('KAFKA_SASL_USERNAME')}\" password=\"{os.getenv('KAFKA_SASL_PASSWORD')}\";"
+            props["sasl.jaas.config"] = f"org.apache.flink.kafka.shaded.org.apache.kafka.common.security.plain.PlainLoginModule required username=\"{os.getenv('KAFKA_SASL_USERNAME')}\" password=\"{os.getenv('KAFKA_SASL_PASSWORD')}\";"
             
         ca_path = os.getenv("KAFKA_SSL_CA_LOCATION", "/opt/flink/usrlib/secrets/ca.pem")
+        local_ca = os.path.abspath(os.path.join(os.getcwd(), "secrets", "ca.pem"))
+        effective_ca = None
         if os.path.exists(ca_path):
-            props["ssl.ca.location"] = ca_path
+            effective_ca = ca_path
+        elif os.path.exists(local_ca):
+            effective_ca = local_ca
+            
+        if effective_ca:
+            clean_ca = effective_ca.replace("\\", "/")
+            props["ssl.ca.location"] = clean_ca
+            props["ssl.truststore.type"] = "PEM"
+            try:
+                with open(effective_ca, "r") as f:
+                    props["ssl.truststore.certificates"] = f.read()
+            except Exception:
+                props["ssl.truststore.location"] = clean_ca
 
     kafka_source = KafkaSource.builder() \
         .set_properties(props) \
