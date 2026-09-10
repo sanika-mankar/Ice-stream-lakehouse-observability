@@ -3,6 +3,9 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Ensure Python UDF worker runs in process mode (not loopback) on Windows
+os.environ['_python_worker_execution_mode'] = 'process'
+
 # Load local environment variables (.env)
 load_dotenv()
 
@@ -153,7 +156,7 @@ def main():
         jar_path = f"file://{os.path.abspath('flink/lib/flink-sql-connector-kafka-3.1.0-1.18.jar')}"
     env.add_jars(jar_path)
 
-    env.set_parallelism(int(os.getenv("FLINK_PARALLELISM", "2")))
+    env.set_parallelism(int(os.getenv("FLINK_PARALLELISM", "1")))
     
     # Enable checkpointing for Restart Strategy (Failure Recovery)
     checkpoint_interval = int(os.getenv("FLINK_CHECKPOINT_INTERVAL", "10000"))
