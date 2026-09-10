@@ -1,4 +1,26 @@
 import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load local environment variables (.env)
+load_dotenv()
+
+# Auto-detect local project .jdk if JAVA_HOME not already configured
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+os.environ["PYTHONPATH"] = f"{str(repo_root)}{os.pathsep}{os.environ.get('PYTHONPATH', '')}"
+
+if "JAVA_HOME" not in os.environ:
+    local_jdk_root = repo_root / ".jdk"
+    if local_jdk_root.exists():
+        candidates = [d for d in local_jdk_root.iterdir() if d.is_dir() and (d / "bin" / "java.exe").exists()]
+        if candidates:
+            jdk_path = str(candidates[0])
+            os.environ["JAVA_HOME"] = jdk_path
+            os.environ["PATH"] = f"{jdk_path}\\bin{os.pathsep}{os.environ.get('PATH', '')}"
+
 import json
 import logging
 from datetime import datetime, timezone
