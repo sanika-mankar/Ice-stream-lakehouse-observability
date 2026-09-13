@@ -116,3 +116,65 @@ class Incident:
             resolved_at=data.get("resolved_at"),
             resolution_reason=data.get("resolution_reason"),
         )
+
+
+@dataclass
+class PipelineEvent:
+    """Historical audit event emitted by the operational engine."""
+    event_id: str
+    event_type: str
+    event_time: str
+    pipeline_state: PipelineState
+    circuit_state: CircuitState
+    message: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = asdict(self)
+        d["pipeline_state"] = self.pipeline_state.value
+        d["circuit_state"] = self.circuit_state.value
+        return d
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PipelineEvent":
+        import json
+        meta = data.get("metadata", {})
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta)
+            except Exception:
+                meta = {}
+        return cls(
+            event_id=data["event_id"],
+            event_type=data["event_type"],
+            event_time=data["event_time"],
+            pipeline_state=PipelineState(data["pipeline_state"]),
+            circuit_state=CircuitState(data["circuit_state"]),
+            message=data["message"],
+            metadata=meta,
+        )
+
+
+@dataclass
+class ObservabilitySnapshot:
+    """Aggregated snapshot of current operational health and metrics."""
+    processed_events_total: int
+    valid_events_total: int
+    invalid_events_total: int
+    current_error_rate: float
+    quality_score: float
+    throughput_events_per_second: float
+    circuit_state: CircuitState
+    pipeline_state: PipelineState
+    incident_count: int
+    active_incident_count: int
+    recovery_attempts: int
+    last_successful_checkpoint: Optional[str]
+    last_event_time: Optional[str]
+    uptime_seconds: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = asdict(self)
+        d["circuit_state"] = self.circuit_state.value
+        d["pipeline_state"] = self.pipeline_state.value
+        return d
