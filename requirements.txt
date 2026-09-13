@@ -25,3 +25,5 @@ python-dotenv>=1.0.0
 # API Backend
 fastapi
 uvicorn
+boto3>=1.34.0
+pyarrow>=13.0.0
