@@ -82,8 +82,8 @@ def setup_iceberg():
     print("   [OK] Environments initialized.")
 
     # 2. Create Iceberg Catalog
-    print("\n2. Creating Iceberg Catalog in Flink SQL...")
-    db_path = os.path.abspath(os.path.join(os.getcwd(), "data", "iceberg_catalog.db")).replace("\\", "/")
+    db_env = os.getenv("ICEBERG_CATALOG_DB_PATH", "data/iceberg_catalog.db")
+    db_path = str(Path(db_env).resolve()).replace("\\", "/")
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     catalog_sql = f"""
     CREATE CATALOG {catalog_name} WITH (

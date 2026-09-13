@@ -28,9 +28,9 @@ class IcebergConfig:
     @classmethod
     def from_env(cls) -> "IcebergConfig":
         """Load configuration from environment variables."""
-        bucket = os.getenv("B2_BUCKET_NAME", "ice-stream-lakehouse")
-        repo_root = Path(os.getcwd())
-        default_db = str(repo_root / "data" / "iceberg_catalog.db").replace("\\", "/")
+        db_env = os.getenv("ICEBERG_CATALOG_DB_PATH", "data/iceberg_catalog.db")
+        sqlite_db = str(Path(db_env).resolve()).replace("\\", "/")
+        os.makedirs(os.path.dirname(sqlite_db), exist_ok=True)
         return cls(
             catalog_name=os.getenv("ICEBERG_CATALOG_NAME", "ice_stream_catalog"),
             database_name=os.getenv("ICEBERG_DATABASE", "ice_stream"),
@@ -42,7 +42,7 @@ class IcebergConfig:
             region=os.getenv("B2_REGION", "us-east-005"),
             access_key_id=os.getenv("B2_ACCESS_KEY_ID", ""),
             secret_access_key=os.getenv("B2_SECRET_ACCESS_KEY", ""),
-            sqlite_db_path=os.getenv("ICEBERG_CATALOG_DB_PATH", default_db),
+            sqlite_db_path=sqlite_db,
         )
 
     def get_create_catalog_sql(self) -> str:

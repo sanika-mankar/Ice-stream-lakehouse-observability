@@ -70,35 +70,52 @@ class ValidateAndParseMap(MapFunction):
     def open(self, runtime_context):
         from app.validation.engine import ValidationEngine
         from app.validation.registry import ValidationRegistry
-        from app.validation.required_fields import RequiredFieldsValidator
+        from app.validation.required_fields import RequiredFieldsValidator, NullRequiredFieldValidator
         from app.validation.types import TypeValidator
-        from app.validation.business_rules import PositivePriceValidator, ValidStatusValidator
+        from app.validation.business_rules import RangeValidator, EnumValidator
+        from app.validation.schema import SchemaMismatchValidator, SchemaVersionValidator
         
         registry = ValidationRegistry()
-        registry.register(RequiredFieldsValidator())
-        registry.register(TypeValidator())
-        registry.register(PositivePriceValidator())
-        registry.register(ValidStatusValidator())
+        registry.register(RequiredFieldsValidator())       # DQ-001: REQUIRED_FIELD_MISSING
+        registry.register(NullRequiredFieldValidator())   # DQ-002: NULL_REQUIRED_FIELD
+        registry.register(TypeValidator())                # DQ-003: INVALID_TYPE
+        registry.register(RangeValidator())               # DQ-004: INVALID_RANGE
+        registry.register(EnumValidator())                # DQ-005: INVALID_ENUM
+        registry.register(SchemaMismatchValidator())      # DQ-007: SCHEMA_MISMATCH
+        registry.register(SchemaVersionValidator())       # DQ-008: UNKNOWN_SCHEMA_VERSION
         self.engine = ValidationEngine(registry)
 
     def map(self, value):
         try:
             data = json.loads(value)
-            
-            schema_version = data.get("schema_version")
-            if not schema_version:
-                return json.dumps({"is_valid": False, "event_id": data.get("event_id", "unknown"), "payload": {"data": data, "errors": ["Missing schema_version (DQ-008)"]}})
-            if schema_version != "1.0":
-                return json.dumps({"is_valid": False, "event_id": data.get("event_id", "unknown"), "payload": {"data": data, "errors": [f"Unknown schema_version '{schema_version}' (DQ-008)"]}})
-                
+            if not isinstance(data, dict):
+                return json.dumps({
+                    "is_valid": False,
+                    "event_id": "invalid-structure",
+                    "payload": {
+                        "data": data,
+                        "errors": ["Schema mismatch: payload must be a JSON object (DQ-007)"]
+                    }
+                })
             result = self.engine.validate_event(data)
             payload = {"data": data, "errors": result.errors}
-            
-            return json.dumps({"is_valid": result.is_valid, "event_id": data.get("event_id", "unknown"), "payload": payload})
+            return json.dumps({
+                "is_valid": result.is_valid,
+                "event_id": data.get("event_id", "unknown"),
+                "payload": payload
+            })
         except json.JSONDecodeError as e:
-            return json.dumps({"is_valid": False, "event_id": "invalid-json", "payload": {"data": value, "errors": [f"Invalid JSON: {str(e)}"]}})
+            return json.dumps({
+                "is_valid": False,
+                "event_id": "invalid-json",
+                "payload": {"data": value, "errors": [f"Invalid JSON: {str(e)} (DQ-007)"]}
+            })
         except Exception as e:
-            return json.dumps({"is_valid": False, "event_id": "unknown", "payload": {"data": value, "errors": [f"Validation crash: {str(e)}"]}})
+            return json.dumps({
+                "is_valid": False,
+                "event_id": "unknown",
+                "payload": {"data": value, "errors": [f"Validation crash: {str(e)}"]}
+            })
 
 
 class DeduplicateProcessFunction(KeyedProcessFunction):
@@ -245,7 +262,7 @@ def to_dlq_iceberg_row(x: str) -> Row:
     category = "VALIDATION_FAILED"
     if any("DQ-006" in r for r in failed_rules):
         category = "DUPLICATE"
-    elif any("DQ-008" in r for r in failed_rules) or any("JSON" in r for r in failed_rules):
+    elif any(r in ("DQ-007", "DQ-008", "DQ-PARSE") for r in failed_rules) or any("JSON" in r for r in failed_rules):
         category = "SCHEMA_VIOLATION"
         
     raw_payload_str = json.dumps(raw_data) if isinstance(raw_data, dict) else str(raw_data)
@@ -304,8 +321,9 @@ def main():
     endpoint = os.getenv("B2_ENDPOINT", "https://s3.us-east-005.backblazeb2.com")
     access_key = os.getenv("B2_ACCESS_KEY_ID")
     secret_key = os.getenv("B2_SECRET_ACCESS_KEY")
-    region = os.getenv("B2_REGION", "us-east-005")
-    db_path = os.path.abspath(os.path.join(os.getcwd(), "data", "iceberg_catalog.db")).replace("\\", "/")
+    db_env = os.getenv("ICEBERG_CATALOG_DB_PATH", "data/iceberg_catalog.db")
+    db_path = str(Path(db_env).resolve()).replace("\\", "/")
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
     catalog_sql = f"""
     CREATE CATALOG {catalog_name} WITH (

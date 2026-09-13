@@ -1,16 +1,18 @@
-import os
-import sys
-import json
-import sqlite3
 import io
+import json
+import os
 from pathlib import Path
-from dotenv import load_dotenv
+import sqlite3
+import sys
+
 import boto3
+from dotenv import load_dotenv
 import pyarrow.parquet as pq
 
 load_dotenv()
 
 repo_root = Path(__file__).resolve().parent.parent
+
 
 def verify_lakehouse():
     print("=" * 60)
@@ -23,8 +25,9 @@ def verify_lakehouse():
     secret_key = os.getenv("B2_SECRET_ACCESS_KEY")
     region = os.getenv("B2_REGION")
 
-    # 1. Inspect SQLite Catalog
-    db_path = repo_root / "data" / "iceberg_catalog.db"
+    # 1. Inspect Configurable SQLite Catalog
+    db_env = os.getenv("ICEBERG_CATALOG_DB_PATH", "data/iceberg_catalog.db")
+    db_path = Path(db_env).resolve()
     print(f"\n1. SQLite Catalog Database: {db_path}")
     if db_path.exists():
         conn = sqlite3.connect(str(db_path))
@@ -36,7 +39,7 @@ def verify_lakehouse():
             print(f"   Metadata Location: {r[3]}")
         conn.close()
     else:
-        print("   [WARNING] SQLite catalog database not found.")
+        print(f"   [WARNING] SQLite catalog database not found at {db_path}")
 
     # 2. Inspect B2 Objects & Snapshots
     print(f"\n2. Connecting to Backblaze B2: {endpoint} (Bucket: {bucket})")
@@ -48,12 +51,15 @@ def verify_lakehouse():
         region_name=region,
     )
 
-    for table_name in ["transactions_clean", "transactions_dlq"]:
+    clean_table = os.getenv("ICEBERG_CLEAN_TABLE", "transactions_clean")
+    dlq_table = os.getenv("ICEBERG_DLQ_TABLE", "transactions_dlq")
+
+    for table_name in [clean_table, dlq_table]:
         print(f"\n--- Inspecting Table: ice_stream.{table_name} ---")
         prefix = f"warehouse/ice_stream/{table_name}/"
         resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
         contents = resp.get("Contents", [])
-        
+
         metadata_files = [c for c in contents if "/metadata/" in c["Key"] and c["Key"].endswith(".metadata.json")]
         manifest_files = [c for c in contents if c["Key"].endswith(".avro")]
         data_files = [c for c in contents if "/data/" in c["Key"] and c["Key"].endswith(".parquet")]
@@ -76,23 +82,21 @@ def verify_lakehouse():
                 print(f"   Timestamp: {latest_snap.get('timestamp-ms')}")
                 print(f"   Summary: {json.dumps(latest_snap.get('summary', {}), indent=6)}")
 
-        # Read Parquet rows
-        total_rows = 0
-        for df in data_files:
-            print(f"\n   Reading Parquet data file: {df['Key']} ({df['Size']} bytes)")
+        # Read latest Parquet sample for schema verification (read up to 3 latest files)
+        sample_files = sorted(data_files, key=lambda x: x["LastModified"])[-3:] if data_files else []
+        for df in sample_files:
+            print(f"\n   Inspecting Parquet data file: {df['Key']} ({df['Size']} bytes)")
             p_obj = s3.get_object(Bucket=bucket, Key=df["Key"])
             buffer = io.BytesIO(p_obj["Body"].read())
             table = pq.read_table(buffer)
-            total_rows += table.num_rows
             print(f"   File Rows: {table.num_rows}, Columns: {len(table.column_names)}")
             print(f"   Schema:\n{table.schema}")
-            print(f"   Sample Record:\n{table.to_pandas().head(3).to_string()}")
-
-        print(f"\n   >>> Total Committed Rows in '{table_name}': {total_rows}")
+            print(f"   Sample Record:\n{table.to_pandas().head(2).to_string()}")
 
     print("\n" + "=" * 60)
     print("             VERIFICATION COMPLETE")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     verify_lakehouse()
