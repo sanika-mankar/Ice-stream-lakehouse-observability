@@ -149,10 +149,17 @@ class DeduplicateProcessFunction(KeyedProcessFunction):
             yield value
 
 class MetricsWindowFunction(ProcessWindowFunction):
+    def _get_service(self):
+        if not hasattr(self, "_service") or self._service is None:
+            from app.observability.service import get_observability_service
+            self._service = get_observability_service()
+        return self._service
+
     def process(self, key, context, elements):
         count = 0
         valid = 0
         invalid = 0
+        last_event_time = None
         
         for item in elements:
             try:
@@ -163,19 +170,51 @@ class MetricsWindowFunction(ProcessWindowFunction):
                     valid += 1
                 else:
                     invalid += 1
+                et = e.get("payload", {}).get("data", {}).get("event_time")
+                if et:
+                    last_event_time = et
             except Exception:
                 count += 1
                 invalid += 1
                 
+        w_start_ms = context.window().start
+        w_end_ms = context.window().end
+        window_start = datetime.fromtimestamp(w_start_ms / 1000, tz=timezone.utc).isoformat()
+        window_end = datetime.fromtimestamp(w_end_ms / 1000, tz=timezone.utc).isoformat()
+        window_size_seconds = (w_end_ms - w_start_ms) / 1000
+
+        service = self._get_service()
+        circuit_state, pipeline_state, incident = service.evaluate_window(
+            window_start=window_start,
+            window_end=window_end,
+            duration_seconds=window_size_seconds,
+            processed=count,
+            valid=valid,
+            invalid=invalid,
+            last_event_time=last_event_time,
+        )
+
         error_rate = invalid / count if count > 0 else 0.0
-        quality_score = (valid / count) * 100 if count > 0 else 0.0
-        window_size_seconds = (context.window().end - context.window().start) / 1000
+        quality_score = (valid / count) * 100 if count > 0 else 100.0
         throughput = count / window_size_seconds if window_size_seconds > 0 else 0.0
         
         log_msg = (f"[METRICS] Window: {window_size_seconds:.0f}s | Processed: {count} | "
                    f"Valid: {valid} | Invalid: {invalid} | Error Rate: {error_rate:.2%} | "
-                   f"Quality Score: {quality_score:.1f}/100 | Throughput: {throughput:.1f} events/sec")
+                   f"Quality Score: {quality_score:.1f}/100 | Throughput: {throughput:.1f} events/sec | "
+                   f"Circuit: {circuit_state.value} | Health: {pipeline_state.value}")
         yield log_msg
+
+        fail_fast = os.getenv("CIRCUIT_BREAKER_FAIL_FAST", "true").lower() in ("true", "1", "yes")
+        from app.observability.models import CircuitState
+        if circuit_state == CircuitState.OPEN and fail_fast:
+            from app.observability.circuit_breaker import CircuitBreakerTripException
+            raise CircuitBreakerTripException(
+                f"Circuit breaker tripped: error_rate={error_rate:.4f} > threshold={service.circuit_breaker.threshold:.4f}",
+                error_rate=error_rate,
+                threshold=service.circuit_breaker.threshold,
+                processed_count=count,
+                invalid_count=invalid,
+            )
 
 class TransactionTimestampAssigner(TimestampAssigner):
     def extract_timestamp(self, value, record_timestamp: int) -> int:
