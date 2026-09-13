@@ -97,3 +97,106 @@ class ObservabilityRepository:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_events_time ON pipeline_events(event_time);")
 
             conn.commit()
+
+    def save_incident(self, incident: Incident) -> None:
+        """Inserts or updates an incident record."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT INTO incidents (
+                incident_id, incident_type, severity, status, created_at, updated_at,
+                resolved_at, circuit_state, error_rate, threshold, processed_count,
+                valid_count, invalid_count, window_start, window_end, reason,
+                affected_component, recovery_attempts, resolution_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(incident_id) DO UPDATE SET
+                incident_type = excluded.incident_type,
+                severity = excluded.severity,
+                status = excluded.status,
+                updated_at = excluded.updated_at,
+                resolved_at = excluded.resolved_at,
+                circuit_state = excluded.circuit_state,
+                error_rate = excluded.error_rate,
+                processed_count = excluded.processed_count,
+                valid_count = excluded.valid_count,
+                invalid_count = excluded.invalid_count,
+                reason = excluded.reason,
+                recovery_attempts = excluded.recovery_attempts,
+                resolution_reason = excluded.resolution_reason;
+            """, (
+                incident.incident_id,
+                incident.incident_type.value,
+                incident.severity.value,
+                incident.status.value,
+                incident.created_at,
+                incident.updated_at,
+                incident.resolved_at,
+                incident.circuit_state.value,
+                incident.error_rate,
+                incident.threshold,
+                incident.processed_count,
+                incident.valid_count,
+                incident.invalid_count,
+                incident.window_start,
+                incident.window_end,
+                incident.reason,
+                incident.affected_component,
+                incident.recovery_attempts,
+                incident.resolution_reason,
+            ))
+            conn.commit()
+
+    def get_incident(self, incident_id: str) -> Optional[Incident]:
+        """Fetches a single incident by its unique incident_id."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM incidents WHERE incident_id = ?", (incident_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return Incident.from_dict(dict(row))
+
+    def get_active_incidents(self) -> List[Incident]:
+        """Returns all incidents currently in OPEN, ACKNOWLEDGED, or RESOLVING state."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM incidents WHERE status IN ('OPEN', 'ACKNOWLEDGED', 'RESOLVING') ORDER BY created_at DESC"
+            )
+            rows = cursor.fetchall()
+            return [Incident.from_dict(dict(r)) for r in rows]
+
+    def list_incidents(self, limit: int = 50) -> List[Incident]:
+        """Returns incidents ordered by creation time descending."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM incidents ORDER BY created_at DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            return [Incident.from_dict(dict(r)) for r in rows]
+
+    def save_pipeline_event(self, event: PipelineEvent) -> None:
+        """Inserts an operational audit event."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT OR IGNORE INTO pipeline_events (
+                event_id, event_type, event_time, pipeline_state, circuit_state, message, metadata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                event.event_id,
+                event.event_type,
+                event.event_time,
+                event.pipeline_state.value,
+                event.circuit_state.value,
+                event.message,
+                json.dumps(event.metadata),
+            ))
+            conn.commit()
+
+    def list_pipeline_events(self, limit: int = 50) -> List[PipelineEvent]:
+        """Returns recent pipeline events."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM pipeline_events ORDER BY event_time DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            return [PipelineEvent.from_dict(dict(r)) for r in rows]
