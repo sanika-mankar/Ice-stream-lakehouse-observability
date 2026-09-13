@@ -19,6 +19,7 @@ from app.observability.metrics import ObservabilityMetricsAggregator
 from app.observability.models import (
     CircuitState,
     Incident,
+    IncidentStatus,
     ObservabilitySnapshot,
     PipelineEvent,
     PipelineState,
@@ -199,7 +200,7 @@ class ObservabilityService:
         inc = self.repo.get_incident(incident_id)
         if not inc:
             return None
-        inc.status = Incident.status
+        inc.status = IncidentStatus.RESOLVED
         now_iso = datetime.now(timezone.utc).isoformat()
         inc.resolved_at = now_iso
         inc.updated_at = now_iso
