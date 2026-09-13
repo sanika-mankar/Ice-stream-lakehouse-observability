@@ -102,9 +102,9 @@ export default function LakehousePage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="flex flex-col divide-y divide-border">
-              {snapshots.map((snap: any) => (
+              {snapshots.map((snap: any, index: number) => (
                 <button 
-                  key={snap.id}
+                  key={`${snap.id || 'snap'}-${index}`}
                   onClick={() => setSelectedSnapshot(snap)}
                   className={`p-4 text-left transition-colors hover:bg-muted/30 ${selectedSnapshot?.id === snap.id ? 'bg-muted/50 border-l-2 border-l-primary' : ''}`}
                 >
@@ -183,7 +183,7 @@ export default function LakehousePage() {
                       value={compareTarget.id}
                       onChange={(e) => setCompareTarget(snapshots.find((s: any) => s.id === e.target.value) || snapshots[1])}
                     >
-                      {snapshots.map((s: any) => <option key={s.id} value={s.id}>Snapshot {s.id}</option>)}
+                      {snapshots.map((s: any, idx: number) => <option key={`${s.id || 'snap'}-${idx}`} value={s.id}>Snapshot {s.id}</option>)}
                     </select>
                     <div className="flex justify-between items-center text-sm">
                       <span>Records:</span>
