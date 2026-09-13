@@ -121,10 +121,14 @@ class KafkaTransactionProducer:
             self.metrics["failures"] += 1
             logger.error(f"Error producing event: {e}")
 
+    def flush(self, timeout: float = 10.0) -> int:
+        """Wait for pending messages to be delivered."""
+        return self._producer.flush(timeout=timeout)
+
     def close(self) -> None:
         """Wait for pending messages to be delivered and close the producer."""
         logger.info("Flushing producer... waiting for deliveries.")
-        remaining = self._producer.flush(timeout=10.0)
+        remaining = self.flush(timeout=10.0)
         if remaining > 0:
             logger.warning(f"Producer closed but {remaining} messages were still in queue.")
             self.metrics["failures"] += remaining
