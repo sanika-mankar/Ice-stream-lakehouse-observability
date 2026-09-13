@@ -9,23 +9,45 @@ import type { Incident } from '../lib/types';
 import { Search } from 'lucide-react';
 
 export default function ReliabilityPage() {
-  const { incidents, circuitBreakerStatus, circuitBreakerEvents, metrics } = useStore();
+  const { incidents, circuitBreakerStatus, circuitBreakerEvents, metrics, triggerRecovery } = useStore();
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [search, setSearch] = useState('');
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const filteredIncidents = useMemo(() => {
-    return incidents.filter(inc => 
+    return incidents.filter((inc: any) => 
       inc.id.toLowerCase().includes(search.toLowerCase()) ||
       inc.affectedComponent.toLowerCase().includes(search.toLowerCase()) ||
       inc.status.toLowerCase().includes(search.toLowerCase())
     );
   }, [incidents, search]);
 
+  const handleRecovery = async () => {
+    setIsRecovering(true);
+    await triggerRecovery();
+    setIsRecovering(false);
+  };
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 relative font-georgia">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Reliability & Incidents</h1>
-        <p className="text-muted-foreground">Manage system incidents and monitor circuit breaker health.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Reliability & Incidents</h1>
+          <p className="text-muted-foreground">Manage system incidents and monitor circuit breaker health.</p>
+        </div>
+        <div>
+          <button
+            onClick={handleRecovery}
+            disabled={circuitBreakerStatus !== 'OPEN' || isRecovering}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+              circuitBreakerStatus === 'OPEN'
+                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg cursor-pointer'
+                : 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
+            }`}
+          >
+            {isRecovering ? 'Triggering Recovery...' : 'Initiate Recovery (POST /api/recovery)'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -44,11 +66,11 @@ export default function ReliabilityPage() {
             <div className="grid grid-cols-2 gap-4 flex-1">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Configured Threshold</span>
-                <span className="font-mono font-medium">5.0% Error Rate</span>
+                <span className="font-mono font-medium text-blue-600 dark:text-blue-400">2.0% Error Rate (Strict &gt; 2%)</span>
               </div>
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Current Error Rate</span>
-                <span className={`font-mono font-medium ${metrics.errorRate > 5 ? 'text-status-critical' : 'text-status-healthy'}`}>
+                <span className={`font-mono font-medium ${metrics.errorRate > 2 ? 'text-status-critical' : 'text-status-healthy'}`}>
                   {metrics.errorRate.toFixed(2)}%
                 </span>
               </div>
@@ -58,7 +80,7 @@ export default function ReliabilityPage() {
               </div>
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Recovery Status</span>
-                <span className="font-mono font-medium">{circuitBreakerStatus === 'OPEN' ? 'Halted' : 'Monitoring'}</span>
+                <span className="font-mono font-medium">{circuitBreakerStatus === 'OPEN' ? 'Halted (Trip)' : circuitBreakerStatus === 'HALF_OPEN' ? 'Testing Probe' : 'Normal Stream'}</span>
               </div>
             </div>
           </CardContent>
@@ -70,7 +92,7 @@ export default function ReliabilityPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {circuitBreakerEvents.map((evt, i) => (
+              {circuitBreakerEvents.map((evt: any, i: number) => (
                 <div key={i} className="flex gap-4">
                   <div className="flex flex-col items-center">
                     <div className={`w-3 h-3 rounded-full ${evt.state === 'CLOSED' ? 'bg-status-healthy' : evt.state === 'OPEN' ? 'bg-status-critical' : 'bg-status-warning'}`} />
@@ -119,7 +141,7 @@ export default function ReliabilityPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredIncidents.map((incident) => (
+                {filteredIncidents.map((incident: any) => (
                   <tr 
                     key={incident.id} 
                     className="hover:bg-muted/30 cursor-pointer transition-colors"
