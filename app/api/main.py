@@ -1,78 +1,95 @@
+"""FastAPI application entrypoint for Ice Stream (Master 7).
+
+Coordinates REST API endpoints, real-time WebSocket streaming,
+lifespan management, and CORS configuration.
+"""
+
+import logging
 import os
-import smtplib
-from email.message import EmailMessage
+from contextlib import asynccontextmanager
+from typing import Any, Dict
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, EmailStr
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-app = FastAPI(title="Ice Stream Contact API")
+from app.api.routes.health import router as health_router
+from app.api.routes.incidents import router as incidents_router
+from app.api.routes.lakehouse import router as lakehouse_router
+from app.api.routes.metrics import router as metrics_router
+from app.api.routes.pipeline import router as pipeline_router
+from app.api.routes.recovery import router as recovery_router
+from app.api.routes.system import router as system_router
+from app.api.websockets import router as ws_router, ws_manager
+from app.observability.service import get_observability_service
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger("ice_stream.api")
 
 
-class ContactForm(BaseModel):
-    name: str
-    email: EmailStr
-    subject: str
-    message: str
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Graceful startup and shutdown lifecycle management."""
+    logger.info("Initializing Ice Stream Operational API & Observability Service...")
+    # Warm up observability service singleton and synchronize persistent state
+    service = get_observability_service()
+    snap = service.get_snapshot()
+    logger.info(
+        f"Observability Service ready: PipelineState={snap.pipeline_state.value} "
+        f"CircuitState={snap.circuit_state.value} ActiveIncidents={snap.active_incident_count}"
+    )
+
+    yield
+
+    logger.info("Shutting down Ice Stream API and closing WebSocket channels...")
+    ws_manager.shutdown()
 
 
-@app.get("/")
-def home():
+app = FastAPI(
+    title="Ice Stream — Lakehouse Observability & Quality Platform",
+    description="Production-grade real-time streaming data quality, circuit breaker, and lakehouse monitoring API.",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS configuration
+allowed_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
+allowed_origins = [orig.strip() for orig in allowed_origins_env.split(",") if orig.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/", tags=["Root"])
+def root_info() -> Dict[str, Any]:
+    """Root service information."""
     return {
-        "message": "Ice Stream Contact API is running"
+        "service": "Ice Stream",
+        "description": "Real-Time Streaming Data Quality & Lakehouse Observability Platform",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "websocket": "/ws",
+        "status": "running",
     }
 
 
-@app.post("/contact")
-def submit_contact_form(contact: ContactForm):
-    try:
-        email_user = os.getenv("EMAIL_USER")
-        email_password = os.getenv("EMAIL_PASSWORD")
-        santosh_email = os.getenv("SANTOSH_EMAIL")
-        copy_email = os.getenv("COPY_EMAIL")
+# Mount all operational REST routes under /api
+app.include_router(health_router, prefix="/api")
+app.include_router(metrics_router, prefix="/api")
+app.include_router(incidents_router, prefix="/api")
+app.include_router(recovery_router, prefix="/api")
+app.include_router(pipeline_router, prefix="/api")
+app.include_router(lakehouse_router, prefix="/api")
+app.include_router(system_router, prefix="/api")
 
-        if not email_user or not email_password:
-            raise HTTPException(
-                status_code=500,
-                detail="Email configuration is missing"
-            )
-
-        msg = EmailMessage()
-
-        msg["Subject"] = f"Ice Stream Contact: {contact.subject}"
-        msg["From"] = email_user
-        msg["To"] = santosh_email
-        msg["Cc"] = copy_email
-
-        msg.set_content(
-            f"""
-New message received from Ice Stream Contact Us page.
-
-Name: {contact.name}
-Email: {contact.email}
-Subject: {contact.subject}
-
-Message:
-{contact.message}
-"""
-        )
-
-        with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
-            smtp.starttls()
-            smtp.login(email_user, email_password)
-            smtp.send_message(msg)
-
-        return {
-            "success": True,
-            "message": "Message sent successfully"
-        }
-
-    except Exception as error:
-        print("Email Error:", error)
-
-        raise HTTPException(
-            status_code=500,
-            detail="Unable to send message"
-        )
+# Mount WebSocket endpoint
+app.include_router(ws_router)
