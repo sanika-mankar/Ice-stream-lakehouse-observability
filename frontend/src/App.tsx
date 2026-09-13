@@ -39,6 +39,7 @@ function App() {
         <Route path="/console" element={<DashboardLayout />}>
           <Route index element={<Navigate to="/console/overview" replace />} />
           <Route path="overview" element={<DashboardPage />} />
+          <Route path="contact-us" element={<ContactUsPage />} />
           <Route path="pipeline/*" element={<PipelinePage />} />
           <Route path="quality/*" element={<QualityPage />} />
           <Route path="reliability/*" element={<ReliabilityPage />} />

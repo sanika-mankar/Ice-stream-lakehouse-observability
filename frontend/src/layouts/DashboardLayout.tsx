@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { 
   Activity, Database, GitCommit, LayoutDashboard, Settings, ShieldAlert, Workflow, Bell, Search,
-  LineChart, Cloud, Network, Shield
+  LineChart, Cloud, Network, Shield, Mail
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useStore } from "../lib/store/useStore";
@@ -11,6 +11,7 @@ const CORE_ITEMS = [
   { name: "Overview", path: "/console/overview", icon: LayoutDashboard },
   { name: "Pipeline", path: "/console/pipeline", icon: Workflow },
   { name: "Data Quality", path: "/console/quality", icon: ShieldAlert },
+  { name: "Contact Us", path: "/console/contact-us", icon: Mail },
 ];
 
 const INFRASTRUCTURE_ITEMS = [
