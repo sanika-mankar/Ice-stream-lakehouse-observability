@@ -70,3 +70,81 @@ class CircuitBreaker:
         self._state = state
         if old_state != state:
             logger.info(f"[CIRCUIT STATE] Transitioned from {old_state.value} to {state.value}")
+
+    def initiate_recovery(self) -> bool:
+        """Transition from OPEN to HALF_OPEN to begin controlled recovery evaluation."""
+        if self._state == CircuitState.OPEN:
+            self._state = CircuitState.HALF_OPEN
+            self._recovery_attempts += 1
+            logger.info(
+                f"[CIRCUIT HALF_OPEN] Initiated recovery attempt #{self._recovery_attempts}. "
+                f"State is now HALF_OPEN awaiting real probe evaluation."
+            )
+            return True
+        elif self._state == CircuitState.HALF_OPEN:
+            logger.warning("[CIRCUIT HALF_OPEN] Already in HALF_OPEN recovery state.")
+            return True
+        else:
+            logger.warning(f"[CIRCUIT STATE] Cannot initiate recovery while state is {self._state.value}.")
+            return False
+
+    def evaluate_window(self, metrics: WindowMetrics) -> Tuple[CircuitState, bool, str]:
+        """Evaluates a 10-second tumbling window against the circuit breaker threshold.
+        
+        Returns:
+            (new_state, state_changed, reason)
+        """
+        if not self.enabled:
+            return self._state, False, "Circuit breaker disabled by configuration"
+
+        # Non-negotiable condition: error_rate > threshold
+        breached = metrics.error_rate > self.threshold
+        state_changed = False
+        reason = ""
+
+        if self._state == CircuitState.CLOSED:
+            if breached:
+                self._state = CircuitState.OPEN
+                state_changed = True
+                reason = (
+                    f"Threshold breached: error_rate={metrics.error_rate:.4f} ({metrics.error_rate:.2%}) > "
+                    f"threshold={self.threshold:.4f} ({self.threshold:.2%}) "
+                    f"[invalid={metrics.invalid_count}, processed={metrics.processed_count}]"
+                )
+                logger.error(f"[CIRCUIT OPEN] {reason}")
+            else:
+                reason = (
+                    f"Healthy window: error_rate={metrics.error_rate:.4f} ({metrics.error_rate:.2%}) <= "
+                    f"threshold={self.threshold:.4f} ({self.threshold:.2%})"
+                )
+
+        elif self._state == CircuitState.HALF_OPEN:
+            if breached:
+                self._state = CircuitState.OPEN
+                state_changed = True
+                reason = (
+                    f"Recovery probe failed: error_rate={metrics.error_rate:.4f} ({metrics.error_rate:.2%}) > "
+                    f"threshold={self.threshold:.4f} ({self.threshold:.2%}) during HALF_OPEN probe."
+                )
+                logger.error(f"[CIRCUIT OPEN] {reason}")
+            else:
+                # Real events processed with error_rate <= threshold confirms recovery
+                if metrics.processed_count > 0:
+                    self._state = CircuitState.CLOSED
+                    state_changed = True
+                    reason = (
+                        f"Recovery probe passed: error_rate={metrics.error_rate:.4f} ({metrics.error_rate:.2%}) <= "
+                        f"threshold={self.threshold:.4f} on real traffic [{metrics.processed_count} processed]. "
+                        f"Circuit restored to CLOSED."
+                    )
+                    logger.info(f"[CIRCUIT RECOVERED] {reason}")
+                else:
+                    reason = "Zero-traffic window during HALF_OPEN probe; awaiting real events."
+
+        elif self._state == CircuitState.OPEN:
+            if breached:
+                reason = f"Circuit remains OPEN (ongoing error_rate={metrics.error_rate:.2%})"
+            else:
+                reason = "Circuit remains OPEN until explicit recovery initiation (HALF_OPEN)."
+
+        return self._state, state_changed, reason
