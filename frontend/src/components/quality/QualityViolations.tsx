@@ -12,7 +12,7 @@ export function QualityViolations() {
   const [search, setSearch] = useState('');
   const [selectedRecord, setSelectedRecord] = useState<QuarantineRecord | null>(null);
 
-  const filtered = quarantineRecords.filter(r => 
+  const filtered = quarantineRecords.filter((r: any) => 
     r.ruleId.toLowerCase().includes(search.toLowerCase()) || 
     r.field.toLowerCase().includes(search.toLowerCase()) ||
     r.eventId.toLowerCase().includes(search.toLowerCase())
@@ -87,7 +87,7 @@ export function QualityViolations() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((record) => (
+                {filtered.map((record: any) => (
                   <tr key={record.id} className="hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => setSelectedRecord(record)}>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(record.timestamp).toLocaleTimeString()}</td>
                     <td className="px-4 py-3 font-mono">{record.eventId}</td>
