@@ -89,3 +89,66 @@ class IncidentManager:
             f"reason='{reason}'"
         )
         return incident
+
+    def mark_resolving(self, incident_id: Optional[str] = None) -> List[Incident]:
+        """Marks active incident(s) as RESOLVING when recovery probe begins."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        active = self.repo.get_active_incidents()
+        updated = []
+
+        for inc in active:
+            if incident_id is None or inc.incident_id == incident_id:
+                inc.status = IncidentStatus.RESOLVING
+                inc.circuit_state = CircuitState.HALF_OPEN
+                inc.recovery_attempts += 1
+                inc.updated_at = now_iso
+                self.repo.save_incident(inc)
+                logger.info(
+                    f"[INCIDENT UPDATED] incident_id={inc.incident_id} status={inc.status.value} "
+                    f"recovery_attempts={inc.recovery_attempts}"
+                )
+                updated.append(inc)
+
+        return updated
+
+    def acknowledge_incident(self, incident_id: str) -> Optional[Incident]:
+        """Transitions an incident to ACKNOWLEDGED."""
+        inc = self.repo.get_incident(incident_id)
+        if not inc:
+            logger.warning(f"Incident {incident_id} not found.")
+            return None
+        inc.status = IncidentStatus.ACKNOWLEDGED
+        inc.updated_at = datetime.now(timezone.utc).isoformat()
+        self.repo.save_incident(inc)
+        logger.info(f"[INCIDENT UPDATED] incident_id={inc.incident_id} status=ACKNOWLEDGED")
+        return inc
+
+    def resolve_active_incidents(self, resolution_reason: str) -> List[Incident]:
+        """Resolves all active incidents upon successful circuit recovery."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        active = self.repo.get_active_incidents()
+        resolved = []
+
+        for inc in active:
+            inc.status = IncidentStatus.RESOLVED
+            inc.circuit_state = CircuitState.CLOSED
+            inc.resolved_at = now_iso
+            inc.updated_at = now_iso
+            inc.resolution_reason = resolution_reason
+            self.repo.save_incident(inc)
+            logger.info(
+                f"[INCIDENT RESOLVED] incident_id={inc.incident_id} resolved_at={now_iso} "
+                f"reason='{resolution_reason}'"
+            )
+            resolved.append(inc)
+
+        return resolved
+
+    def get_active_incidents(self) -> List[Incident]:
+        return self.repo.get_active_incidents()
+
+    def get_incident(self, incident_id: str) -> Optional[Incident]:
+        return self.repo.get_incident(incident_id)
+
+    def list_incidents(self, limit: int = 50) -> List[Incident]:
+        return self.repo.list_incidents(limit)
