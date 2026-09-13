@@ -59,8 +59,8 @@ export default function DashboardPage() {
           title="Error Rate"
           value={`${metrics.errorRate.toFixed(2)}%`}
           icon={AlertTriangle}
-          trend={metrics.errorRate > 5 ? "up" : "stable"}
-          statusColor={metrics.errorRate > 5 ? "text-red-500" : "text-slate-400"}
+          trend={metrics.errorRate > 2 ? "up" : "stable"}
+          statusColor={metrics.errorRate > 2 ? "text-red-500" : "text-slate-400"}
         />
         <MetricCard
           title="DLQ Records"
@@ -110,7 +110,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             <AnimatePresence initial={false}>
-              {activityFeed.slice(0, 10).map((event) => (
+              {activityFeed.slice(0, 10).map((event: any) => (
                 <motion.div
                   key={event.id}
                   initial={{ opacity: 0, x: 20 }}
@@ -120,11 +120,11 @@ export default function DashboardPage() {
                   className="flex gap-3 p-3 rounded-lg border border-black/5 bg-black/ hover:bg-white/80 shadow-sm transition-colors"
                 >
                   <div className="mt-0.5 flex-shrink-0">
-                    <StatusBadge status={event.severity} />
+                    <StatusBadge status={event.type === 'CRITICAL' ? 'CRITICAL' : event.type === 'WARNING' ? 'WARNING' : 'HEALTHY'} />
                   </div>
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-xs text-slate-800 truncate">{event.source}</span>
+                      <span className="font-semibold text-xs text-slate-800 truncate">{event.source || 'Pipeline'}</span>
                       <span className="text-[10px] font-mono text-slate-500 shrink-0 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(event.timestamp).toLocaleTimeString()}
