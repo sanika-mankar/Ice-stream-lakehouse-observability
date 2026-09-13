@@ -42,13 +42,25 @@ class Settings:
     dashboard_port: int = int(getenv("DASHBOARD_PORT", "8501"))
     dashboard_host: str = getenv("DASHBOARD_HOST", "localhost")
 
-    # Observability
+    # Observability & Circuit Breaker (Master 6)
     metrics_enabled: bool = getenv("METRICS_ENABLED", "true").lower() in (
         "true",
         "1",
         "yes",
     )
     health_check_interval: int = int(getenv("HEALTH_CHECK_INTERVAL", "60"))
+    circuit_breaker_enabled: bool = getenv("CIRCUIT_BREAKER_ENABLED", "true").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+    circuit_breaker_error_rate_threshold: float = float(getenv("CIRCUIT_BREAKER_ERROR_RATE_THRESHOLD", "0.02"))
+    circuit_breaker_fail_fast: bool = getenv("CIRCUIT_BREAKER_FAIL_FAST", "true").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+    observability_db_path: str = getenv("OBSERVABILITY_DB_PATH", "data/observability.db")
 
     # Database
     database_url: str = getenv("DATABASE_URL", "sqlite:///./data/ice_stream.db")
