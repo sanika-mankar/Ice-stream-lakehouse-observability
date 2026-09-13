@@ -49,6 +49,13 @@ def test_extract_failure_details_schema_violation():
     assert category == "SCHEMA_VIOLATION"
 
 
+def test_extract_failure_details_schema_mismatch_dq007():
+    errors = ["Schema mismatch: unauthorized extra fields: rogue (DQ-007)"]
+    failed_rules, messages, category = extract_failure_details(errors)
+    assert "DQ-007" in failed_rules
+    assert category == "SCHEMA_VIOLATION"
+
+
 def test_to_dlq_iceberg_dict():
     raw = {
         "event_id": "evt-bad",

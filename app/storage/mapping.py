@@ -37,7 +37,7 @@ def extract_failure_details(errors: list[Any]) -> tuple[list[str], list[str], st
     category = "VALIDATION_FAILED"
     if any("DQ-006" in r for r in failed_rules):
         category = "DUPLICATE"
-    elif any("DQ-008" in r for r in failed_rules) or any("JSON" in r for r in failed_rules):
+    elif any(r in ("DQ-007", "DQ-008", "DQ-PARSE") for r in failed_rules) or any("JSON" in r for r in failed_rules):
         category = "SCHEMA_VIOLATION"
 
     return failed_rules, error_msgs, category

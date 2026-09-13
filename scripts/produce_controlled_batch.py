@@ -14,9 +14,10 @@ load_dotenv()
 
 from app.ingestion.producer import KafkaTransactionProducer
 
+
 def generate_controlled_batch():
-    print("=== Generating Controlled Batch for Master 5 End-to-End Test ===")
-    
+    print("=== Generating Controlled Batch for Master 5 DQ-001..DQ-008 Verification ===")
+
     topic = os.getenv("KAFKA_TOPIC_TRANSACTIONS", "ice-stream.transactions")
     producer = KafkaTransactionProducer(topic=topic)
 
@@ -39,16 +40,33 @@ def generate_controlled_batch():
             "payment_method": "CREDIT_CARD" if i % 2 == 0 else "DEBIT_CARD",
             "source": "pos",
             "schema_version": "1.0",
-            "metadata": {"test_batch": "master_5", "item_num": i}
+            "metadata": {"test_batch": "master_5_full_dq", "item_num": i},
         }
         valid_events.append(evt)
 
-    # 2. Generate 5 invalid transactions
+    # 2. Generate 8 targeted invalid transactions covering DQ-001 through DQ-008
     now_str = datetime.now(timezone.utc).isoformat()
-    # Invalid 1: Missing customer_id (DQ-001)
+
+    # Rule DQ-001: REQUIRED_FIELD_MISSING (customer_id key completely absent)
     inv1 = {
-        "event_id": f"evt-inv-001-{uuid.uuid4().hex[:6]}",
-        "transaction_id": "tx-inv-001",
+        "event_id": f"evt-inv-dq001-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq001",
+        "event_time": now_str,
+        # 'customer_id' is missing
+        "product_id": "prod-999",
+        "quantity": 1,
+        "unit_price": 50.00,
+        "currency": "USD",
+        "status": "COMPLETED",
+        "payment_method": "CREDIT_CARD",
+        "source": "pos",
+        "schema_version": "1.0",
+    }
+
+    # Rule DQ-002: NULL_REQUIRED_FIELD (customer_id key present but None)
+    inv2 = {
+        "event_id": f"evt-inv-dq002-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq002",
         "event_time": now_str,
         "customer_id": None,
         "product_id": "prod-999",
@@ -58,12 +76,13 @@ def generate_controlled_batch():
         "status": "COMPLETED",
         "payment_method": "CREDIT_CARD",
         "source": "pos",
-        "schema_version": "1.0"
+        "schema_version": "1.0",
     }
-    # Invalid 2: Bad quantity type (DQ-002)
-    inv2 = {
-        "event_id": f"evt-inv-002-{uuid.uuid4().hex[:6]}",
-        "transaction_id": "tx-inv-002",
+
+    # Rule DQ-003: INVALID_TYPE (quantity is string 'three')
+    inv3 = {
+        "event_id": f"evt-inv-dq003-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq003",
         "event_time": now_str,
         "customer_id": "cust-999",
         "product_id": "prod-999",
@@ -73,12 +92,13 @@ def generate_controlled_batch():
         "status": "COMPLETED",
         "payment_method": "CREDIT_CARD",
         "source": "pos",
-        "schema_version": "1.0"
+        "schema_version": "1.0",
     }
-    # Invalid 3: Negative price (DQ-004)
-    inv3 = {
-        "event_id": f"evt-inv-003-{uuid.uuid4().hex[:6]}",
-        "transaction_id": "tx-inv-003",
+
+    # Rule DQ-004: INVALID_RANGE (unit_price is negative)
+    inv4 = {
+        "event_id": f"evt-inv-dq004-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq004",
         "event_time": now_str,
         "customer_id": "cust-999",
         "product_id": "prod-999",
@@ -88,12 +108,13 @@ def generate_controlled_batch():
         "status": "COMPLETED",
         "payment_method": "CREDIT_CARD",
         "source": "pos",
-        "schema_version": "1.0"
+        "schema_version": "1.0",
     }
-    # Invalid 4: Unknown status (DQ-005)
-    inv4 = {
-        "event_id": f"evt-inv-004-{uuid.uuid4().hex[:6]}",
-        "transaction_id": "tx-inv-004",
+
+    # Rule DQ-005: INVALID_ENUM (status 'DELIVERED' is not in allowed enum)
+    inv5 = {
+        "event_id": f"evt-inv-dq005-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq005",
         "event_time": now_str,
         "customer_id": "cust-999",
         "product_id": "prod-999",
@@ -103,28 +124,71 @@ def generate_controlled_batch():
         "status": "DELIVERED",
         "payment_method": "CREDIT_CARD",
         "source": "pos",
-        "schema_version": "1.0"
+        "schema_version": "1.0",
     }
-    # Invalid 5: Duplicate of valid_events[0] (DQ-006)
-    inv5 = dict(valid_events[0])
 
-    invalid_events = [inv1, inv2, inv3, inv4, inv5]
+    # Rule DQ-006: DUPLICATE_EVENT (replay valid_events[0])
+    inv6 = dict(valid_events[0])
 
-    print(f"Sending 25 valid events to Kafka...")
+    # Rule DQ-007: SCHEMA_MISMATCH (unauthorized extra drift field)
+    inv7 = {
+        "event_id": f"evt-inv-dq007-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq007",
+        "event_time": now_str,
+        "customer_id": "cust-999",
+        "product_id": "prod-999",
+        "quantity": 1,
+        "unit_price": 30.00,
+        "currency": "USD",
+        "status": "COMPLETED",
+        "payment_method": "CREDIT_CARD",
+        "source": "pos",
+        "schema_version": "1.0",
+        "unauthorized_drift_field": "malicious_or_unexpected",
+    }
+
+    # Rule DQ-008: UNKNOWN_SCHEMA_VERSION (schema_version '99.0' unsupported)
+    inv8 = {
+        "event_id": f"evt-inv-dq008-{uuid.uuid4().hex[:6]}",
+        "transaction_id": "tx-inv-dq008",
+        "event_time": now_str,
+        "customer_id": "cust-999",
+        "product_id": "prod-999",
+        "quantity": 1,
+        "unit_price": 20.00,
+        "currency": "USD",
+        "status": "COMPLETED",
+        "payment_method": "CREDIT_CARD",
+        "source": "pos",
+        "schema_version": "99.0",
+    }
+
+    invalid_events = [inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8]
+
+    print(f"Sending 25 valid events to Kafka topic '{topic}'...")
     for evt in valid_events:
         producer.produce(evt)
 
-    print(f"Sending 5 invalid events to Kafka...")
+    print(f"Sending 8 invalid events (DQ-001..DQ-008) to Kafka topic '{topic}'...")
     for evt in invalid_events:
         producer.produce(evt)
 
     producer.close()
-    
+
     print("\n--- Summary of Controlled Batch ---")
-    print(f"Total Sent:     30")
-    print(f"Valid Expected: 25 -> Should land in ice_stream.transactions_clean")
-    print(f"Invalid Expected: 5 -> Should land in ice_stream.transactions_dlq")
+    print(f"Total Sent:       33")
+    print(f"Valid Expected:   25 -> Routes to transactions_clean")
+    print(f"Invalid Expected:  8 -> Routes to transactions_dlq (DQ-001..DQ-008)")
+    print("  - DQ-001: Missing required field (customer_id omitted)")
+    print("  - DQ-002: NULL required field (customer_id is None)")
+    print("  - DQ-003: Invalid type (quantity='three')")
+    print("  - DQ-004: Invalid range (unit_price=-45.00)")
+    print("  - DQ-005: Invalid enum (status='DELIVERED')")
+    print("  - DQ-006: Duplicate event (replayed valid_events[0])")
+    print("  - DQ-007: Schema mismatch (extra unauthorized attribute)")
+    print("  - DQ-008: Unknown schema version (schema_version='99.0')")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     generate_controlled_batch()
