@@ -21,6 +21,7 @@ def test_flink_validation_logic():
     # 1. Valid event
     valid_event = {
         "event_id": "evt-123",
+        "transaction_id": "tx-123",
         "event_time": "2026-08-31T20:00:00Z",
         "schema_version": "1.0",
         "customer_id": "c-1",
