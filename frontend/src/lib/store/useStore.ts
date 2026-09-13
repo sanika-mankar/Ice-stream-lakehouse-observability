@@ -1,347 +1,695 @@
 import { create } from 'zustand';
-import type { SystemStatus, DataQualityMetric, ActivityEvent, ServiceHealth, NotificationAlert, PipelineNodeData, Incident, QualityRule, QuarantineRecord, IcebergSnapshot } from '../types';
 import type { Node, Edge, OnNodesChange } from '@xyflow/react';
 import { applyNodeChanges } from '@xyflow/react';
+import { api } from '../api/client';
+import type { 
+  PipelineNodeData, 
+  Incident, 
+  IcebergSnapshot, 
+  SystemStatus, 
+  QualityRule, 
+  QuarantineRecord 
+} from '../types';
 
-interface AppState {
-  // Global States
+export type ConnectionStatus = 'LIVE' | 'STALE' | 'OFFLINE';
+
+export interface IncidentRecord {
+  incident_id: string;
+  incident_type: string;
+  severity: string;
+  status: 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVING' | 'RESOLVED';
+  created_at: string;
+  updated_at: string;
+  resolved_at?: string | null;
+  circuit_state: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  error_rate: number;
+  threshold: number;
+  processed_count: number;
+  valid_count: number;
+  invalid_count: number;
+  window_start: string;
+  window_end: string;
+  reason: string;
+  affected_component: string;
+  recovery_attempts: number;
+  resolution_reason?: string | null;
+}
+
+export interface CircuitBreakerEvent {
+  state: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  time: string;
+  reason: string;
+}
+
+export interface ServiceStatus {
+  id: string;
+  name: string;
   status: SystemStatus;
-  setStatus: (status: SystemStatus) => void;
-  
-  // Real-time Metrics
+  latencyMs: number;
+  uptimePercentage: number;
+  currentLoad: number;
+  lastHeartbeat: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: 'INFO' | 'WARNING' | 'CRITICAL' | 'SUCCESS';
+  message: string;
+  timestamp: string;
+}
+
+export interface AppState {
+  // Connection & Health
+  connectionStatus: ConnectionStatus;
+  status: SystemStatus;
+  lastUpdated: string | null;
+  pipelineState: 'HEALTHY' | 'DEGRADED' | 'TRIPPED' | 'RECOVERING' | 'FAILED';
+  circuitBreakerStatus: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  circuitBreakerThreshold: number;
+  recoveryAttempts: number;
+  circuitBreakerEvents: CircuitBreakerEvent[];
+
+  // Metrics
   metrics: {
-    eventsPerSec: number;
     eventsProcessed: number;
+    validEvents: number;
+    invalidEvents: number;
     errorRate: number;
+    qualityScore: number;
+    throughput: number;
+    eventsPerSec: number;
     processingLatency: number;
     kafkaLag: number;
     dlqRecords: number;
     activeIncidents: number;
+    uptimeSeconds: number;
+    lastCheckpoint: string | null;
+    lastEventTime: string | null;
   };
-  quality: DataQualityMetric;
-  
-  // React Flow State
+
+  // Quality Aggregations
+  quality: {
+    qualityScore: number;
+    validEvents: number;
+    invalidEvents: number;
+    totalEvents: number;
+  };
+
+  // Live React Flow Topology
   nodes: Node<PipelineNodeData>[];
   edges: Edge[];
   onNodesChange: OnNodesChange<Node<PipelineNodeData>>;
   setNodes: (nodes: Node<PipelineNodeData>[]) => void;
-  
-  // Phase 4 State
+
+  // Incidents
   incidents: Incident[];
+  activeIncidents: IncidentRecord[];
+  incidentHistory: IncidentRecord[];
+
+  // Lakehouse Storage Info
+  snapshots: IcebergSnapshot[];
+  lakehouseTables: Array<{
+    name: string;
+    type: string;
+    format: string;
+    partition_spec: string;
+    warehouse_path: string;
+    description: string;
+    metadata_location?: string;
+  }>;
+  lakehouseStatus: Record<string, unknown> | null;
+
+  // System & Services
+  services: ServiceStatus[];
+  system: Record<string, unknown> | null;
+  activityFeed: ActivityItem[];
   qualityRules: QualityRule[];
   quarantineRecords: QuarantineRecord[];
-  snapshots: IcebergSnapshot[];
-  circuitBreakerStatus: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
-  circuitBreakerEvents: { time: string; state: string; reason?: string }[];
-  
-  // Feed & Infrastructure
-  activityFeed: ActivityEvent[];
-  services: ServiceHealth[];
-  notifications: NotificationAlert[];
 
-  // Simulation Triggers & State
+  // Simulation / Demo flags (Truthful operations)
   isSimulationRunning: boolean;
-  toggleSimulation: () => void;
+
+  // Actions
+  fetchInitialData: () => Promise<void>;
+  connectWebSocket: () => void;
+  disconnectWebSocket: () => void;
+  triggerRecovery: () => Promise<boolean>;
+  acknowledgeIncident: (id: string) => Promise<boolean>;
+  resolveIncident: (id: string, reason: string) => Promise<boolean>;
+  refreshIncidents: () => Promise<void>;
+  refreshLakehouse: () => Promise<void>;
+
+  // Safe stubs for compatibility
   simulateTick: () => void;
   injectWarning: () => void;
   injectSchemaFailure: () => void;
-  triggerRecovery: () => void;
   openCircuitBreaker: () => void;
-  injectDemoScenario: (scenario: 'healthy' | 'degradation' | 'incident' | 'recovery') => void;
+  toggleSimulation: () => void;
+  injectDemoScenario: (scenario: string) => void;
 }
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const CANONICAL_RULES: QualityRule[] = [
+  { id: 'DQ-001', name: 'REQUIRED_FIELD_MISSING', description: 'Mandatory event fields (event_id, timestamp, customer_id, amount) must be present', severity: 'critical', threshold: '0%', status: 'active', violationCount: 0 },
+  { id: 'DQ-002', name: 'NULL_REQUIRED_FIELD', description: 'Mandatory fields must not evaluate to null or empty string', severity: 'critical', threshold: '0%', status: 'active', violationCount: 0 },
+  { id: 'DQ-003', name: 'INVALID_TYPE', description: 'Payload field data types must strictly conform to schema specification', severity: 'error', threshold: '0.1%', status: 'active', violationCount: 0 },
+  { id: 'DQ-004', name: 'INVALID_RANGE', description: 'Numeric values must fall within domain ranges (amount > 0 and <= 1,000,000)', severity: 'error', threshold: '0.1%', status: 'active', violationCount: 0 },
+  { id: 'DQ-005', name: 'INVALID_ENUM', description: 'Categorical fields must match enumerated domains (status, payment_method)', severity: 'warning', threshold: '0.5%', status: 'active', violationCount: 0 },
+  { id: 'DQ-006', name: 'DUPLICATE_EVENT', description: 'Event ID must be globally unique within tumbling state deduplication window', severity: 'warning', threshold: '1.0%', status: 'active', violationCount: 0 },
+  { id: 'DQ-007', name: 'SCHEMA_MISMATCH', description: 'Record fields and types must adhere to registered avro/json table schema', severity: 'critical', threshold: '0%', status: 'active', violationCount: 0 },
+  { id: 'DQ-008', name: 'UNKNOWN_SCHEMA_VERSION', description: 'Schema version in payload must be known and registered with validation engine', severity: 'critical', threshold: '0%', status: 'active', violationCount: 0 }
+];
 
-import { MarkerType } from '@xyflow/react';
-
-const initialNodes: Node<PipelineNodeData>[] = [
+const defaultNodes: Node<PipelineNodeData>[] = [
   {
     id: 'source',
     type: 'custom',
-    position: { x: 0, y: 150 },
-    data: { id: 'source', type: 'source', label: 'Data Generators', description: 'Mock transaction producers', status: 'HEALTHY', metrics: { throughput: 2450, latency: 5, errorRate: 0, processed: 1250000, errors: 0 }, lastActivity: new Date().toISOString() }
+    position: { x: 50, y: 180 },
+    data: { id: 'source', type: 'source', label: 'Python Producer', description: 'Kafka streaming transactions', status: 'HEALTHY', metrics: { throughput: 0, latency: 12, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   },
   {
     id: 'kafka',
     type: 'custom',
-    position: { x: 350, y: 150 },
-    data: { id: 'kafka', type: 'kafka', label: 'Kafka Ingestion', description: 'Distributed event streaming', status: 'HEALTHY', metrics: { throughput: 2450, latency: 12, errorRate: 0, processed: 1250000, errors: 0 }, lastActivity: new Date().toISOString() }
+    position: { x: 380, y: 180 },
+    data: { id: 'kafka', type: 'kafka', label: 'Aiven Kafka', description: 'SASL_SSL events topic', status: 'HEALTHY', metrics: { throughput: 0, latency: 18, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   },
   {
     id: 'flink',
     type: 'custom',
-    position: { x: 700, y: 0 },
-    data: { id: 'flink', type: 'flink', label: 'Flink Processing', description: 'Stateful stream processing', status: 'HEALTHY', metrics: { throughput: 2450, latency: 25, errorRate: 0, processed: 1250000, errors: 0 }, lastActivity: new Date().toISOString() }
+    position: { x: 720, y: 70 },
+    data: { id: 'flink', type: 'flink', label: 'Apache Flink 1.18', description: '10s tumbling window stream engine', status: 'HEALTHY', metrics: { throughput: 0, latency: 24, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   },
   {
     id: 'quality',
     type: 'custom',
-    position: { x: 700, y: 300 },
-    data: { id: 'quality', type: 'quality', label: 'Quality Engine', description: 'Schema validation rules', status: 'HEALTHY', metrics: { throughput: 2450, latency: 18, errorRate: 0.12, processed: 1250000, errors: 1500 }, lastActivity: new Date().toISOString() }
+    position: { x: 720, y: 300 },
+    data: { id: 'quality', type: 'quality', label: 'Validation Engine', description: 'Rules DQ-001 through DQ-008', status: 'HEALTHY', metrics: { throughput: 0, latency: 15, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   },
   {
-    id: 'iceberg',
+    id: 'circuit',
     type: 'custom',
-    position: { x: 1050, y: 0 },
-    data: { id: 'iceberg', type: 'storage', label: 'Iceberg Catalog', description: 'Data lakehouse storage', status: 'HEALTHY', metrics: { throughput: 2445, latency: 150, errorRate: 0, processed: 1248500, errors: 0 }, lastActivity: new Date().toISOString() }
+    position: { x: 1060, y: 180 },
+    data: { id: 'circuit', type: 'analytics', label: 'Circuit Breaker', description: 'Strict 2% error threshold gate', status: 'HEALTHY', metrics: { throughput: 0, latency: 5, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   },
   {
-    id: 'dlq',
+    id: 'clean_sink',
     type: 'custom',
-    position: { x: 1050, y: 300 },
-    data: { id: 'dlq', type: 'dlq', label: 'Quarantine / DLQ', description: 'Dead letter queue', status: 'HEALTHY', metrics: { throughput: 5, latency: 10, errorRate: 0, processed: 1500, errors: 0 }, lastActivity: new Date().toISOString() }
+    position: { x: 1400, y: 70 },
+    data: { id: 'clean_sink', type: 'storage', label: 'Iceberg Clean Sink', description: 'Backblaze B2 S3FileIO + Parquet', status: 'HEALTHY', metrics: { throughput: 0, latency: 45, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   },
   {
-    id: 'analytics',
+    id: 'dlq_sink',
     type: 'custom',
-    position: { x: 1400, y: 150 },
-    data: { id: 'analytics', type: 'analytics', label: 'Analytics API', description: 'Real-time serving layer', status: 'HEALTHY', metrics: { throughput: 1500, latency: 45, errorRate: 0, processed: 850000, errors: 0 }, lastActivity: new Date().toISOString() }
+    position: { x: 1400, y: 300 },
+    data: { id: 'dlq_sink', type: 'dlq', label: 'Iceberg DLQ Sink', description: 'Backblaze B2 Quarantine Parquet', status: 'HEALTHY', metrics: { throughput: 0, latency: 40, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
   }
 ];
 
-const initialEdges: Edge[] = [
-  { id: 'e1', source: 'source', target: 'kafka', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e2', source: 'kafka', target: 'flink', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e2b', source: 'kafka', target: 'quality', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e3', source: 'flink', target: 'iceberg', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e4', source: 'quality', target: 'iceberg', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e5', source: 'iceberg', target: 'analytics', type: 'custom', data: { state: 'HEALTHY' } },
-  { id: 'e6', source: 'quality', target: 'dlq', type: 'custom', data: { state: 'HEALTHY' } }
+const defaultEdges: Edge[] = [
+  { id: 'e-source-kafka', source: 'source', target: 'kafka', animated: true, style: { stroke: '#00f0ff', strokeWidth: 2 } },
+  { id: 'e-kafka-flink', source: 'kafka', target: 'flink', animated: true, style: { stroke: '#ff0055', strokeWidth: 2 } },
+  { id: 'e-kafka-quality', source: 'kafka', target: 'quality', animated: true, style: { stroke: '#ff0055', strokeWidth: 2 } },
+  { id: 'e-flink-circuit', source: 'flink', target: 'circuit', animated: true, style: { stroke: '#ffaa00', strokeWidth: 2 } },
+  { id: 'e-quality-circuit', source: 'quality', target: 'circuit', animated: true, style: { stroke: '#00ff66', strokeWidth: 2 } },
+  { id: 'e-circuit-clean', source: 'circuit', target: 'clean_sink', animated: true, style: { stroke: '#00ff66', strokeWidth: 2 } },
+  { id: 'e-circuit-dlq', source: 'circuit', target: 'dlq_sink', animated: false, style: { stroke: '#ff3344', strokeWidth: 2 } }
 ];
 
+let wsInstance: WebSocket | null = null;
+let pingInterval: ReturnType<typeof setInterval> | null = null;
+
 export const useStore = create<AppState>((set, get) => ({
+  connectionStatus: 'OFFLINE',
   status: 'HEALTHY',
-  setStatus: (status) => set({ status }),
-  
-  metrics: {
-    eventsPerSec: 2450,
-    eventsProcessed: 1250000,
-    errorRate: 0.12,
-    processingLatency: 45,
-    kafkaLag: 120,
-    dlqRecords: 1500,
-    activeIncidents: 0,
-  },
-  
-  quality: {
-    totalEvents: 1250000,
-    validEvents: 1248500,
-    invalidEvents: 1500,
-    qualityScore: 99.88,
-    timestamp: new Date().toISOString(),
-  },
-  
-  nodes: initialNodes,
-  edges: initialEdges,
-  onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
-  setNodes: (nodes) => set({ nodes }),
-  
-  incidents: [
-    { id: 'INC-2026-0818-1', severity: 'critical', status: 'RESOLVED', startedAt: new Date(Date.now() - 86400000).toISOString(), resolvedAt: new Date(Date.now() - 82800000).toISOString(), duration: '1h 0m', errorRate: 14.5, threshold: 5.0, affectedComponent: 'Quality Engine', rootCause: 'Schema v2 rollout mismatch causing massive validation failures.', description: 'Upstream producers started sending v2 schema payloads before the Quality Engine ruleset was deployed.' },
-    { id: 'INC-2026-0816-1', severity: 'medium', status: 'RESOLVED', startedAt: new Date(Date.now() - 259200000).toISOString(), resolvedAt: new Date(Date.now() - 257400000).toISOString(), duration: '30m', errorRate: 6.2, threshold: 5.0, affectedComponent: 'Kafka Ingestion', rootCause: 'Broker 4 partition rebalancing latency spike.', description: 'Brief spike in ingestion latency exceeding SLAs.' }
-  ],
-  
-  qualityRules: [
-    { id: 'DQ-001', name: 'REQUIRED_FIELD_MISSING', description: 'A mandatory top-level field is completely missing from the JSON payload.', severity: 'critical', threshold: '0%', status: 'active', violationCount: 450 },
-    { id: 'DQ-002', name: 'NULL_REQUIRED_FIELD', description: 'A mandatory field exists but contains a null value.', severity: 'error', threshold: '0%', status: 'active', violationCount: 230 },
-    { id: 'DQ-003', name: 'INVALID_TYPE', description: 'Field type does not match schema (e.g. string instead of integer).', severity: 'critical', threshold: '0%', status: 'active', violationCount: 820 },
-    { id: 'DQ-004', name: 'INVALID_RANGE', description: 'Numeric value falls outside the allowed bounds (e.g. negative price).', severity: 'warning', threshold: '1%', status: 'active', violationCount: 15 },
-    { id: 'DQ-005', name: 'INVALID_ENUM', description: 'Value is not present in the allowed categorical list.', severity: 'error', threshold: '0%', status: 'active', violationCount: 85 },
-    { id: 'DQ-006', name: 'DUPLICATE_EVENT', description: 'Event with identical transaction ID already processed within window.', severity: 'warning', threshold: '0.1%', status: 'active', violationCount: 42 },
-    { id: 'DQ-007', name: 'SCHEMA_MISMATCH', description: 'The payload structure completely deviates from the registered schema.', severity: 'critical', threshold: '0%', status: 'active', violationCount: 0 },
-    { id: 'DQ-008', name: 'UNKNOWN_SCHEMA_VERSION', description: 'The schema version specified in the header is not registered in the catalog.', severity: 'error', threshold: '0%', status: 'active', violationCount: 0 }
-  ],
-  
-  quarantineRecords: [
-    { id: 'dlq-1', timestamp: new Date(Date.now() - 1000).toISOString(), eventId: 'evt_99x2a', transactionId: 'tx_55412', ruleId: 'DQ-003', field: 'user_age', expected: 'integer', actual: '"twenty"', source: 'mobile_app_ios', schemaVersion: 'v1.4', severity: 'critical' },
-    { id: 'dlq-2', timestamp: new Date(Date.now() - 4000).toISOString(), eventId: 'evt_99x2b', transactionId: 'tx_55413', ruleId: 'DQ-001', field: 'currency', expected: 'string', actual: 'undefined', source: 'web_checkout', schemaVersion: 'v2.0', severity: 'error' },
-    { id: 'dlq-3', timestamp: new Date(Date.now() - 15000).toISOString(), eventId: 'evt_99x2c', transactionId: 'tx_55414', ruleId: 'DQ-005', field: 'status', expected: '["PENDING", "COMPLETED"]', actual: '"UNKNOWN"', source: 'backend_api', schemaVersion: 'v2.0', severity: 'error' },
-  ],
-  
-  snapshots: [
-    { id: '104', timestamp: new Date().toISOString(), records: 1250000, operation: 'append', summary: 'Appended 25k records (batch 44)' },
-    { id: '103', timestamp: new Date(Date.now() - 3600000).toISOString(), records: 1225000, operation: 'append', summary: 'Appended 25k records (batch 43)' },
-    { id: '102', timestamp: new Date(Date.now() - 7200000).toISOString(), records: 1200000, operation: 'overwrite', summary: 'Compaction (optimized 400 small files)' },
-    { id: '101', timestamp: new Date(Date.now() - 10800000).toISOString(), records: 1200000, operation: 'append', summary: 'Appended 30k records (batch 42)' },
-  ],
-  
+  lastUpdated: null,
+  pipelineState: 'HEALTHY',
   circuitBreakerStatus: 'CLOSED',
+  circuitBreakerThreshold: 2.0,
+  recoveryAttempts: 0,
   circuitBreakerEvents: [
-    { time: new Date(Date.now() - 86400000).toISOString(), state: 'CLOSED', reason: 'Manual reset' },
-    { time: new Date(Date.now() - 82800000).toISOString(), state: 'HALF_OPEN', reason: 'Recovery timeout reached, testing flow' },
-    { time: new Date(Date.now() - 81000000).toISOString(), state: 'OPEN', reason: 'Error rate threshold (5.0%) exceeded' },
+    { state: 'CLOSED', time: new Date().toISOString(), reason: 'Initial healthy state — Error rate under 2.0%' }
   ],
-  
-  activityFeed: [
+
+  metrics: {
+    eventsProcessed: 0,
+    validEvents: 0,
+    invalidEvents: 0,
+    errorRate: 0.0,
+    qualityScore: 100.0,
+    throughput: 0,
+    eventsPerSec: 0,
+    processingLatency: 22,
+    kafkaLag: 0,
+    dlqRecords: 0,
+    activeIncidents: 0,
+    uptimeSeconds: 0,
+    lastCheckpoint: null,
+    lastEventTime: null
+  },
+
+  quality: {
+    qualityScore: 100.0,
+    validEvents: 0,
+    invalidEvents: 0,
+    totalEvents: 0
+  },
+
+  nodes: defaultNodes,
+  edges: defaultEdges,
+
+  onNodesChange: (changes) => {
+    set({
+      nodes: applyNodeChanges(changes, get().nodes)
+    });
+  },
+
+  setNodes: (nodes) => set({ nodes }),
+
+  incidents: [],
+  activeIncidents: [],
+  incidentHistory: [],
+
+  snapshots: [],
+  lakehouseTables: [
     {
-      id: '1',
-      timestamp: new Date().toISOString(),
-      severity: 'info',
-      source: 'Ingestion Engine',
-      eventType: 'Startup',
-      message: 'System initialization complete. Pipeline healthy.'
+      name: 'clean_events',
+      type: 'CLEAN',
+      format: 'PARQUET',
+      partition_spec: 'day(timestamp)',
+      warehouse_path: 's3a://iceberg-lakehouse/warehouse/clean_events',
+      description: 'Validated transactions meeting all DQ-001 through DQ-008 quality standards'
+    },
+    {
+      name: 'dlq_events',
+      type: 'QUARANTINE_DLQ',
+      format: 'PARQUET',
+      partition_spec: 'rule_id, day(timestamp)',
+      warehouse_path: 's3a://iceberg-lakehouse/warehouse/dlq_events',
+      description: 'Quarantine storage for payloads failing validation rules or circuit tripped events'
     }
   ],
-  
+  lakehouseStatus: null,
+
   services: [
-    { id: 'kafka', name: 'Kafka Cluster', status: 'HEALTHY', latencyMs: 12, uptimePercentage: 99.99, currentLoad: 45, lastHeartbeat: new Date().toISOString() },
-    { id: 'flink', name: 'Flink Processors', status: 'HEALTHY', latencyMs: 25, uptimePercentage: 99.95, currentLoad: 60, lastHeartbeat: new Date().toISOString() },
-    { id: 'iceberg', name: 'Iceberg Catalog', status: 'HEALTHY', latencyMs: 150, uptimePercentage: 99.99, currentLoad: 30, lastHeartbeat: new Date().toISOString() },
-    { id: 'quality', name: 'Quality Engine', status: 'HEALTHY', latencyMs: 18, uptimePercentage: 99.99, currentLoad: 55, lastHeartbeat: new Date().toISOString() },
+    { id: 'kafka', name: 'Aiven Kafka Cluster', status: 'HEALTHY', latencyMs: 18, uptimePercentage: 99.98, currentLoad: 35, lastHeartbeat: new Date().toISOString() },
+    { id: 'flink', name: 'Apache Flink Engine (v1.18.1)', status: 'HEALTHY', latencyMs: 24, uptimePercentage: 99.95, currentLoad: 42, lastHeartbeat: new Date().toISOString() },
+    { id: 'iceberg', name: 'Iceberg + Backblaze B2 Lakehouse', status: 'HEALTHY', latencyMs: 45, uptimePercentage: 100.0, currentLoad: 20, lastHeartbeat: new Date().toISOString() },
+    { id: 'quality', name: 'ValidationEngine (DQ-001..008)', status: 'HEALTHY', latencyMs: 12, uptimePercentage: 99.99, currentLoad: 28, lastHeartbeat: new Date().toISOString() }
   ],
-  
-  notifications: [],
 
-  isSimulationRunning: true,
-  toggleSimulation: () => set(state => ({ isSimulationRunning: !state.isSimulationRunning })),
+  system: null,
+  activityFeed: [
+    { id: '1', type: 'SUCCESS', message: 'Pipeline initialized with Backblaze B2 storage', timestamp: new Date().toISOString() },
+    { id: '2', type: 'INFO', message: 'Connected to Aiven Kafka SASL_SSL streaming cluster', timestamp: new Date().toISOString() }
+  ],
+  qualityRules: CANONICAL_RULES,
+  quarantineRecords: [],
 
-  simulateTick: () => {
-    const { isSimulationRunning, status, metrics, quality, nodes, edges } = get();
-    if (!isSimulationRunning) return;
-    
-    const variance = (Math.random() - 0.5) * 0.1; 
-    let newEps = Math.floor(metrics.eventsPerSec * (1 + variance));
-    if (newEps < 500) newEps = 500;
-    if (newEps > 10000) newEps = 10000;
+  isSimulationRunning: false,
 
-    const newProcessed = metrics.eventsProcessed + newEps;
-    
-    // Process Node Updates based on Global Status
-    const updatedNodes = nodes.map(node => {
-      const isCbOpen = status === 'CIRCUIT_BREAKER_OPEN';
-      
-      let nodeEps = newEps;
-      let nodeLat = node.data.metrics.latency;
-      
-      if (isCbOpen && (node.id === 'flink' || node.id === 'quality' || node.id === 'iceberg' || node.id === 'analytics')) {
-        nodeEps = 0;
+  fetchInitialData: async () => {
+    try {
+      const [health, metricsData, incidentList, lakehouseStatusData, snapshotsData, systemData] = await Promise.allSettled([
+        api.getHealth(),
+        api.getMetrics(),
+        api.getIncidents(undefined, 100),
+        api.getLakehouseStatus(),
+        api.getLakehouseSnapshots(),
+        api.getSystemInfo()
+      ]);
+
+      let circuitState: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+      let pipelineHealth: SystemStatus = 'HEALTHY';
+      if (health.status === 'fulfilled') {
+        const h = health.value;
+        circuitState = (h.circuit_state as 'CLOSED' | 'OPEN' | 'HALF_OPEN') || 'CLOSED';
+        pipelineHealth = circuitState === 'OPEN' ? 'CRITICAL' : circuitState === 'HALF_OPEN' ? 'WARNING' : 'HEALTHY';
       }
-      
-      if (status === 'WARNING') {
-        nodeLat += Math.random() * 10;
-      } else if (status === 'CRITICAL') {
-        nodeLat += Math.random() * 30;
-      } else if (status === 'HEALTHY') {
-        nodeLat = Math.max(5, nodeLat - 5);
-      }
-      
-      let nodeStatus = node.data.status;
-      if (status === 'CIRCUIT_BREAKER_OPEN' && node.id === 'flink') nodeStatus = 'CIRCUIT_BREAKER_OPEN';
-      else if (status === 'CRITICAL' && node.id === 'quality') nodeStatus = 'CRITICAL';
-      else if (status === 'WARNING' && (node.id === 'kafka' || node.id === 'flink')) nodeStatus = 'WARNING';
-      else nodeStatus = 'HEALTHY';
 
-      return {
-        ...node,
-        data: {
-          ...node.data,
-          status: nodeStatus,
-          isCircuitOpen: nodeStatus === 'CIRCUIT_BREAKER_OPEN',
-          lastActivity: new Date().toISOString(),
-          metrics: {
-            ...node.data.metrics,
-            throughput: nodeEps,
-            latency: Math.floor(nodeLat),
-            processed: node.data.metrics.processed + nodeEps,
-            errorRate: status === 'CRITICAL' && node.id === 'quality' ? 15.4 : (status === 'WARNING' ? 4.2 : node.data.metrics.errorRate)
+      let m = get().metrics;
+      if (metricsData.status === 'fulfilled') {
+        const d = metricsData.value;
+        const total = d.processed_events_total || 0;
+        const valid = d.valid_events_total || 0;
+        const invalid = d.invalid_events_total || 0;
+        const errorRate = d.current_error_rate ? d.current_error_rate * 100 : (total > 0 ? (invalid / total) * 100 : 0);
+        const qualityScore = d.quality_score || Math.max(0, 100 - errorRate);
+        const throughput = d.throughput_events_per_second || 0;
+
+        m = {
+          ...m,
+          eventsProcessed: total,
+          validEvents: valid,
+          invalidEvents: invalid,
+          errorRate,
+          qualityScore,
+          throughput,
+          eventsPerSec: throughput,
+          dlqRecords: invalid,
+          activeIncidents: d.circuit_state === 'OPEN' ? 1 : 0
+        };
+      }
+
+      const incidentsMap: Incident[] = [];
+      const incidentRecords: IncidentRecord[] = [];
+      if (incidentList.status === 'fulfilled') {
+        const raw = Array.isArray(incidentList.value) ? incidentList.value : (incidentList.value as any).incidents || [];
+        raw.forEach((inc: any) => {
+          incidentRecords.push({
+            incident_id: inc.incident_id,
+            incident_type: inc.incident_type || 'CIRCUIT_BREAKER_TRIP',
+            severity: inc.severity || 'critical',
+            status: inc.status,
+            created_at: inc.created_at,
+            updated_at: inc.updated_at,
+            resolved_at: inc.resolved_at,
+            circuit_state: inc.circuit_state,
+            error_rate: inc.error_rate || 0,
+            threshold: inc.threshold || 2.0,
+            processed_count: inc.processed_count || 0,
+            valid_count: inc.valid_count || 0,
+            invalid_count: inc.invalid_count || 0,
+            window_start: inc.window_start || '',
+            window_end: inc.window_end || '',
+            reason: inc.reason || 'Threshold exceeded',
+            affected_component: inc.affected_component || 'ValidationEngine',
+            recovery_attempts: inc.recovery_attempts || 0,
+            resolution_reason: inc.resolution_reason
+          });
+
+          incidentsMap.push({
+            id: inc.incident_id,
+            severity: (inc.severity?.toLowerCase() as any) || 'critical',
+            status: inc.status === 'RESOLVED' ? 'RESOLVED' : 'OPEN',
+            startedAt: inc.created_at,
+            resolvedAt: inc.resolved_at,
+            duration: inc.resolved_at ? 'Resolved' : 'Active',
+            errorRate: inc.error_rate ? Number((inc.error_rate * 100).toFixed(2)) : 0,
+            threshold: 2.0,
+            affectedComponent: inc.affected_component || 'ValidationEngine',
+            rootCause: inc.reason || 'Error rate exceeded strict 2% threshold',
+            description: `Incident ${inc.incident_id}: ${inc.reason || 'Circuit breaker opened'}`
+          });
+        });
+      }
+
+      let snaps: IcebergSnapshot[] = [];
+      if (snapshotsData.status === 'fulfilled') {
+        const rawSnaps = Array.isArray(snapshotsData.value) ? snapshotsData.value : (snapshotsData.value as any).snapshots || [];
+        snaps = rawSnaps.map((s: any) => ({
+          id: s.snapshot_id || s.id || String(s.sequence_number || 'snap'),
+          timestamp: s.timestamp || new Date().toISOString(),
+          operation: s.operation || 'APPEND',
+          records: s.records || s.record_count || 0,
+          manifestFiles: s.manifest_files || 1
+        }));
+      }
+
+      set({
+        connectionStatus: 'LIVE',
+        status: pipelineHealth,
+        pipelineState: circuitState === 'OPEN' ? 'TRIPPED' : circuitState === 'HALF_OPEN' ? 'RECOVERING' : 'HEALTHY',
+        circuitBreakerStatus: circuitState,
+        metrics: m,
+        quality: {
+          qualityScore: m.qualityScore,
+          validEvents: m.validEvents,
+          invalidEvents: m.invalidEvents,
+          totalEvents: m.eventsProcessed
+        },
+        incidents: incidentsMap,
+        activeIncidents: incidentRecords.filter(i => i.status !== 'RESOLVED'),
+        incidentHistory: incidentRecords,
+        snapshots: snaps,
+        lakehouseStatus: lakehouseStatusData.status === 'fulfilled' ? lakehouseStatusData.value : null,
+        system: systemData.status === 'fulfilled' ? systemData.value : null,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Failed to fetch initial data:', err);
+      set({ connectionStatus: 'STALE' });
+    }
+  },
+
+  connectWebSocket: () => {
+    if (wsInstance && (wsInstance.readyState === WebSocket.OPEN || wsInstance.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/ws`;
+
+    try {
+      wsInstance = new WebSocket(wsUrl);
+
+      wsInstance.onopen = () => {
+        set({ connectionStatus: 'LIVE' });
+        if (pingInterval) clearInterval(pingInterval);
+        pingInterval = setInterval(() => {
+          if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
+            wsInstance.send(JSON.stringify({ type: 'ping' }));
           }
+        }, 15000);
+      };
+
+      wsInstance.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          const now = new Date().toISOString();
+
+          if (msg.type === 'initial_state' || msg.type === 'metrics_update') {
+            const data = msg.data || {};
+            const total = data.processed_count || 0;
+            const valid = data.valid_count || 0;
+            const invalid = data.invalid_count || 0;
+            const errorRate = data.error_rate ? data.error_rate * 100 : (total > 0 ? (invalid / total) * 100 : 0);
+            const qualityScore = Math.max(0, 100 - errorRate);
+            const throughput = data.throughput || 0;
+            const circuit = (data.circuit_state as 'CLOSED' | 'OPEN' | 'HALF_OPEN') || get().circuitBreakerStatus;
+
+            set((state) => ({
+              connectionStatus: 'LIVE',
+              lastUpdated: now,
+              circuitBreakerStatus: circuit,
+              status: circuit === 'OPEN' ? 'CRITICAL' : circuit === 'HALF_OPEN' ? 'WARNING' : 'HEALTHY',
+              pipelineState: circuit === 'OPEN' ? 'TRIPPED' : circuit === 'HALF_OPEN' ? 'RECOVERING' : 'HEALTHY',
+              metrics: {
+                ...state.metrics,
+                eventsProcessed: total,
+                validEvents: valid,
+                invalidEvents: invalid,
+                errorRate,
+                qualityScore,
+                throughput,
+                eventsPerSec: throughput,
+                dlqRecords: invalid,
+                activeIncidents: circuit === 'OPEN' ? 1 : 0
+              },
+              quality: {
+                qualityScore,
+                validEvents: valid,
+                invalidEvents: invalid,
+                totalEvents: total
+              }
+            }));
+          } else if (msg.type === 'circuit_state_changed') {
+            const data = msg.data || {};
+            const toState = (data.to_state as 'CLOSED' | 'OPEN' | 'HALF_OPEN') || 'CLOSED';
+            const reason = data.reason || 'Circuit state transition';
+
+            set((state) => ({
+              circuitBreakerStatus: toState,
+              status: toState === 'OPEN' ? 'CRITICAL' : toState === 'HALF_OPEN' ? 'WARNING' : 'HEALTHY',
+              pipelineState: toState === 'OPEN' ? 'TRIPPED' : toState === 'HALF_OPEN' ? 'RECOVERING' : 'HEALTHY',
+              circuitBreakerEvents: [
+                { state: toState, time: now, reason },
+                ...state.circuitBreakerEvents.slice(0, 19)
+              ],
+              activityFeed: [
+                { id: String(Date.now()), type: toState === 'OPEN' ? 'CRITICAL' : 'SUCCESS', message: `Circuit breaker transitioned to ${toState}: ${reason}`, timestamp: now },
+                ...state.activityFeed.slice(0, 19)
+              ]
+            }));
+          }
+        } catch (e) {
+          console.error('Error processing WebSocket frame:', e);
         }
       };
-    });
 
-    const updatedEdges = edges.map(edge => {
-      let edgeState = 'HEALTHY';
-      if (status === 'CIRCUIT_BREAKER_OPEN' && (edge.id === 'e2' || edge.id === 'e3' || edge.id === 'e4' || edge.id === 'e5')) {
-        edgeState = 'CIRCUIT_BREAKER_OPEN';
-      } else if (status === 'CRITICAL') {
-        edgeState = 'CRITICAL';
-        if (edge.id === 'e6') edgeState = 'QUARANTINED'; // Quality to DLQ gets busy
-      } else if (status === 'WARNING') {
-        edgeState = 'WARNING';
-      }
-      return { ...edge, data: { ...edge.data, state: edgeState } };
-    });
-
-    set({
-      metrics: {
-        ...metrics,
-        eventsPerSec: newEps,
-        eventsProcessed: newProcessed,
-      },
-      quality: {
-        ...quality,
-        totalEvents: newProcessed,
-        timestamp: new Date().toISOString(),
-      },
-      nodes: updatedNodes,
-      edges: updatedEdges,
-    });
-  },
-
-  injectWarning: () => {
-    const newEvent: ActivityEvent = { id: generateId(), timestamp: new Date().toISOString(), severity: 'warning', source: 'Kafka Ingestion', eventType: 'High Load', message: 'Kafka partitions showing elevated lag.' };
-    set(state => ({
-      status: 'WARNING',
-      metrics: { ...state.metrics, kafkaLag: 8500 },
-      activityFeed: [newEvent, ...state.activityFeed].slice(0, 50),
-    }));
-  },
-
-  injectSchemaFailure: () => {
-    const newEvent: ActivityEvent = { id: generateId(), timestamp: new Date().toISOString(), severity: 'critical', source: 'Quality Engine', eventType: 'Schema Mismatch', message: 'Massive spike in schema validation errors.' };
-    set(state => ({
-      status: 'CRITICAL',
-      metrics: { ...state.metrics, errorRate: 15.4, activeIncidents: state.metrics.activeIncidents + 1 },
-      quality: { ...state.quality, qualityScore: 84.5 },
-      activityFeed: [newEvent, ...state.activityFeed].slice(0, 50),
-    }));
-  },
-
-  openCircuitBreaker: () => {
-    const newEvent: ActivityEvent = { id: generateId(), timestamp: new Date().toISOString(), severity: 'high', source: 'Flink Processing', eventType: 'Circuit Breaker', message: 'Circuit breaker OPEN. Downstream processing halted.' };
-    set(state => ({
-      status: 'CIRCUIT_BREAKER_OPEN',
-      metrics: { ...state.metrics, eventsPerSec: 0, processingLatency: 0 },
-      activityFeed: [newEvent, ...state.activityFeed].slice(0, 50),
-    }));
-  },
-
-  triggerRecovery: () => {
-    const newEvent: ActivityEvent = { id: generateId(), timestamp: new Date().toISOString(), severity: 'success', source: 'System Supervisor', eventType: 'Recovery', message: 'Pipeline recovered. Systems HEALTHY.' };
-    set(state => ({
-      status: 'HEALTHY',
-      circuitBreakerStatus: 'CLOSED',
-      circuitBreakerEvents: [...state.circuitBreakerEvents, { time: new Date().toISOString(), state: 'CLOSED', reason: 'Automated recovery sequence completed' }],
-      metrics: { ...state.metrics, errorRate: 0.12, activeIncidents: Math.max(0, state.metrics.activeIncidents - 1), kafkaLag: 120 },
-      quality: { ...state.quality, qualityScore: 99.8 },
-      activityFeed: [newEvent, ...state.activityFeed].slice(0, 50),
-    }));
-  },
-
-  injectDemoScenario: (scenario: 'healthy' | 'degradation' | 'incident' | 'recovery') => {
-    const { triggerRecovery, injectWarning, injectSchemaFailure, openCircuitBreaker } = get();
-    switch (scenario) {
-      case 'healthy':
-        triggerRecovery();
-        break;
-      case 'degradation':
-        injectWarning();
+      wsInstance.onclose = () => {
+        set({ connectionStatus: 'OFFLINE' });
+        if (pingInterval) clearInterval(pingInterval);
         setTimeout(() => {
-          injectSchemaFailure();
-        }, 1500);
-        break;
-      case 'incident':
-        injectWarning();
-        setTimeout(() => injectSchemaFailure(), 500);
-        setTimeout(() => openCircuitBreaker(), 1500);
-        set(state => ({
-          circuitBreakerStatus: 'OPEN',
-          circuitBreakerEvents: [...state.circuitBreakerEvents, { time: new Date().toISOString(), state: 'OPEN', reason: 'Error rate threshold (5.0%) exceeded' }]
+          get().connectWebSocket();
+        }, 5000);
+      };
+
+      wsInstance.onerror = () => {
+        set({ connectionStatus: 'STALE' });
+      };
+    } catch (e) {
+      console.error('WebSocket connection error:', e);
+      set({ connectionStatus: 'OFFLINE' });
+    }
+  },
+
+  disconnectWebSocket: () => {
+    if (pingInterval) clearInterval(pingInterval);
+    if (wsInstance) {
+      wsInstance.close();
+      wsInstance = null;
+    }
+  },
+
+  triggerRecovery: async () => {
+    try {
+      const res = await api.triggerRecovery();
+      if (res.success) {
+        set((state) => ({
+          circuitBreakerStatus: 'HALF_OPEN',
+          status: 'WARNING',
+          pipelineState: 'RECOVERING',
+          recoveryAttempts: state.recoveryAttempts + 1,
+          circuitBreakerEvents: [
+            { state: 'HALF_OPEN', time: new Date().toISOString(), reason: 'Manual recovery triggered via API (/api/recovery)' },
+            ...state.circuitBreakerEvents
+          ],
+          activityFeed: [
+            { id: String(Date.now()), type: 'WARNING', message: 'Manual recovery triggered: Circuit is now HALF_OPEN', timestamp: new Date().toISOString() },
+            ...state.activityFeed
+          ]
         }));
-        break;
-      case 'recovery':
-        triggerRecovery();
-        break;
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Recovery request failed:', e);
+      return false;
+    }
+  },
+
+  acknowledgeIncident: async (id: string) => {
+    try {
+      const res = await api.acknowledgeIncident(id);
+      if (res.success) {
+        await get().refreshIncidents();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to acknowledge incident:', e);
+      return false;
+    }
+  },
+
+  resolveIncident: async (id: string, reason: string) => {
+    try {
+      const res = await api.resolveIncident(id, reason);
+      if (res.success) {
+        await get().refreshIncidents();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Failed to resolve incident:', e);
+      return false;
+    }
+  },
+
+  refreshIncidents: async () => {
+    try {
+      const res = await api.getIncidents(undefined, 100);
+      const raw = Array.isArray(res) ? res : (res as any).incidents || [];
+      const incidentRecords: IncidentRecord[] = raw.map((inc: any) => ({
+        incident_id: inc.incident_id,
+        incident_type: inc.incident_type || 'CIRCUIT_BREAKER_TRIP',
+        severity: inc.severity || 'critical',
+        status: inc.status,
+        created_at: inc.created_at,
+        updated_at: inc.updated_at,
+        resolved_at: inc.resolved_at,
+        circuit_state: inc.circuit_state,
+        error_rate: inc.error_rate || 0,
+        threshold: inc.threshold || 2.0,
+        processed_count: inc.processed_count || 0,
+        valid_count: inc.valid_count || 0,
+        invalid_count: inc.invalid_count || 0,
+        window_start: inc.window_start || '',
+        window_end: inc.window_end || '',
+        reason: inc.reason || 'Threshold exceeded',
+        affected_component: inc.affected_component || 'ValidationEngine',
+        recovery_attempts: inc.recovery_attempts || 0,
+        resolution_reason: inc.resolution_reason
+      }));
+
+      const incidentsMap: Incident[] = raw.map((inc: any) => ({
+        id: inc.incident_id,
+        severity: (inc.severity?.toLowerCase() as any) || 'critical',
+        status: inc.status === 'RESOLVED' ? 'RESOLVED' : 'OPEN',
+        startedAt: inc.created_at,
+        resolvedAt: inc.resolved_at,
+        duration: inc.resolved_at ? 'Resolved' : 'Active',
+        errorRate: inc.error_rate ? Number((inc.error_rate * 100).toFixed(2)) : 0,
+        threshold: 2.0,
+        affectedComponent: inc.affected_component || 'ValidationEngine',
+        rootCause: inc.reason || 'Error rate exceeded strict 2% threshold',
+        description: `Incident ${inc.incident_id}: ${inc.reason || 'Circuit breaker opened'}`
+      }));
+
+      set({
+        incidents: incidentsMap,
+        activeIncidents: incidentRecords.filter(i => i.status !== 'RESOLVED'),
+        incidentHistory: incidentRecords
+      });
+    } catch (e) {
+      console.error('Failed to refresh incidents:', e);
+    }
+  },
+
+  refreshLakehouse: async () => {
+    try {
+      const [statusRes, snapshotsRes] = await Promise.all([
+        api.getLakehouseStatus(),
+        api.getLakehouseSnapshots()
+      ]);
+      const rawSnaps = Array.isArray(snapshotsRes) ? snapshotsRes : (snapshotsRes as any).snapshots || [];
+      const snaps: IcebergSnapshot[] = rawSnaps.map((s: any) => ({
+        id: s.snapshot_id || s.id || String(s.sequence_number || 'snap'),
+        timestamp: s.timestamp || new Date().toISOString(),
+        operation: s.operation || 'APPEND',
+        records: s.records || s.record_count || 0,
+        manifestFiles: s.manifest_files || 1
+      }));
+      set({
+        lakehouseStatus: statusRes,
+        snapshots: snaps
+      });
+    } catch (e) {
+      console.error('Failed to refresh lakehouse:', e);
+    }
+  },
+
+  // Safe stubs to maintain backwards compatibility without fake data
+  simulateTick: () => {
+    get().fetchInitialData();
+  },
+  injectWarning: () => {
+    console.info('Load warning notification requested');
+  },
+  injectSchemaFailure: () => {
+    console.info('Schema failure observation requested');
+  },
+  openCircuitBreaker: () => {
+    console.info('Circuit breaker test state requested');
+  },
+  toggleSimulation: () => {
+    set((s) => ({ isSimulationRunning: !s.isSimulationRunning }));
+  },
+  injectDemoScenario: (scenario: string) => {
+    if (scenario === 'recovery') {
+      get().triggerRecovery();
+    } else {
+      get().fetchInitialData();
     }
   }
 }));
