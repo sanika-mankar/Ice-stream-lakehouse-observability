@@ -9,7 +9,7 @@ export function QualityRules() {
   const { qualityRules } = useStore();
   const [search, setSearch] = useState('');
 
-  const filtered = qualityRules.filter(r => r.name.toLowerCase().includes(search.toLowerCase()) || r.id.toLowerCase().includes(search.toLowerCase()));
+  const filtered = qualityRules.filter((r: any) => r.name.toLowerCase().includes(search.toLowerCase()) || r.id.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -53,7 +53,7 @@ export function QualityRules() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((rule) => (
+                {filtered.map((rule: any) => (
                   <tr key={rule.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono font-medium">{rule.id}</td>
                     <td className="px-4 py-3 font-medium">{rule.name}</td>
