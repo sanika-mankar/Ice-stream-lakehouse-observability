@@ -19,14 +19,15 @@ import { useStore } from "./lib/store/useStore";
 import LandingPage from "./pages/LandingPage";
 
 function App() {
-  const simulateTick = useStore(state => state.simulateTick);
+  const fetchInitialData = useStore(state => state.fetchInitialData);
+  const connectWebSocket = useStore(state => state.connectWebSocket);
+  const disconnectWebSocket = useStore(state => state.disconnectWebSocket);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      simulateTick();
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [simulateTick]);
+    fetchInitialData();
+    connectWebSocket();
+    return () => disconnectWebSocket();
+  }, [fetchInitialData, connectWebSocket, disconnectWebSocket]);
 
   return (
     <BrowserRouter>
