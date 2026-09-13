@@ -24,20 +24,30 @@ if "JAVA_HOME" not in os.environ:
             os.environ["JAVA_HOME"] = jdk_path
             os.environ["PATH"] = f"{jdk_path}\\bin{os.pathsep}{os.environ.get('PATH', '')}"
 
+jar_dir = os.path.abspath(os.path.join(str(repo_root), "flink", "lib"))
+hadoop_cp = f"{jar_dir}\\*"
+if "HADOOP_CLASSPATH" in os.environ:
+    os.environ["HADOOP_CLASSPATH"] = f"{hadoop_cp}{os.pathsep}{os.environ['HADOOP_CLASSPATH']}"
+else:
+    os.environ["HADOOP_CLASSPATH"] = hadoop_cp
+
 import json
 import logging
+import re
+from decimal import Decimal
 from datetime import datetime, timezone
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitializer
 from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common.watermark_strategy import WatermarkStrategy, TimestampAssigner
 from pyflink.common.time import Time
-from pyflink.common import Duration
+from pyflink.common import Duration, Row
 from pyflink.datastream.functions import MapFunction, KeyedProcessFunction, ProcessWindowFunction
 from pyflink.datastream.state import ValueStateDescriptor, StateTtlConfig
 from pyflink.common.typeinfo import Types
 from pyflink.datastream.window import TumblingProcessingTimeWindows
-import urllib.request
+from pyflink.table import StreamTableEnvironment
+from pyflink.table.types import DataTypes
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -163,35 +173,161 @@ class TransactionTimestampAssigner(TimestampAssigner):
             pass
         return record_timestamp
 
+
+# --- Row Conversion Helpers for Iceberg Tables ---
+
+def to_clean_iceberg_row(x: str) -> Row:
+    d = json.loads(x)
+    data = d.get("payload", {}).get("data", {})
+    
+    et_str = data.get("event_time", "")
+    et_dt = None
+    if et_str:
+        try:
+            et_dt = datetime.fromisoformat(et_str.replace("Z", "+00:00"))
+        except Exception:
+            et_dt = datetime.now(timezone.utc)
+    else:
+        et_dt = datetime.now(timezone.utc)
+        
+    qty = int(data.get("quantity", 0))
+    up = Decimal(str(data.get("unit_price", "0.00")))
+    meta = json.dumps(data.get("metadata")) if data.get("metadata") is not None else None
+    
+    return Row(
+        str(data.get("event_id", d.get("event_id", ""))),
+        str(data.get("transaction_id", "")),
+        et_dt,
+        str(data.get("customer_id", "")),
+        str(data.get("product_id", "")),
+        qty,
+        up,
+        str(data.get("currency", "USD")),
+        str(data.get("status", "PENDING")),
+        str(data.get("payment_method", "")),
+        str(data.get("source", "")),
+        str(data.get("schema_version", "1.0")),
+        meta
+    )
+
+
+def to_dlq_iceberg_row(x: str) -> Row:
+    d = json.loads(x)
+    payload = d.get("payload", {})
+    raw_data = payload.get("data", {})
+    errors = payload.get("errors", [])
+    
+    event_id = str(d.get("event_id", "unknown"))
+    tx_id = str(raw_data.get("transaction_id")) if isinstance(raw_data, dict) and raw_data.get("transaction_id") else None
+    
+    et_dt = None
+    if isinstance(raw_data, dict) and raw_data.get("event_time"):
+        try:
+            et_dt = datetime.fromisoformat(raw_data["event_time"].replace("Z", "+00:00"))
+        except Exception:
+            pass
+            
+    now_dt = datetime.now(timezone.utc)
+    
+    failed_rules = []
+    error_msgs = []
+    for err in errors:
+        err_str = str(err)
+        error_msgs.append(err_str)
+        m = re.search(r'(DQ-\d{3})', err_str)
+        if m:
+            failed_rules.append(m.group(1))
+        elif "JSON" in err_str:
+            failed_rules.append("DQ-PARSE")
+        else:
+            failed_rules.append("DQ-UNKNOWN")
+            
+    category = "VALIDATION_FAILED"
+    if any("DQ-006" in r for r in failed_rules):
+        category = "DUPLICATE"
+    elif any("DQ-008" in r for r in failed_rules) or any("JSON" in r for r in failed_rules):
+        category = "SCHEMA_VIOLATION"
+        
+    raw_payload_str = json.dumps(raw_data) if isinstance(raw_data, dict) else str(raw_data)
+    schema_ver = str(raw_data.get("schema_version")) if isinstance(raw_data, dict) and raw_data.get("schema_version") else None
+    source = str(raw_data.get("source")) if isinstance(raw_data, dict) and raw_data.get("source") else None
+    recoverable = False if category == "SCHEMA_VIOLATION" else True
+    
+    return Row(
+        event_id,
+        tx_id,
+        et_dt,
+        now_dt,
+        category,
+        failed_rules,
+        error_msgs,
+        raw_payload_str,
+        schema_ver,
+        source,
+        recoverable
+    )
+
+
 def main():
     logger.info("Initializing Flink Stream Processing Environment...")
     env = StreamExecutionEnvironment.get_execution_environment()
-    
-    # Configure Flink environment
-    jar_dir = os.path.join(os.getcwd(), "flink", "lib")
-    os.makedirs(jar_dir, exist_ok=True)
-    jar_name = "flink-sql-connector-kafka-3.1.0-1.18.jar"
-    local_jar_path = os.path.join(jar_dir, jar_name)
-    
-    if not os.path.exists(local_jar_path):
-        url = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.1.0-1.18/flink-sql-connector-kafka-3.1.0-1.18.jar"
-        logger.info(f"Downloading {jar_name}...")
-        urllib.request.urlretrieve(url, local_jar_path)
-        logger.info("Download complete.")
-
-    jar_path = "file:///opt/flink/lib/flink-sql-connector-kafka-3.1.0-1.18.jar"
-    if not os.path.exists("/opt/flink/lib/flink-sql-connector-kafka-3.1.0-1.18.jar"):
-        # Local development fallback
-        jar_uri = f"file:///{local_jar_path.replace(chr(92), '/')}"
-        jar_path = jar_uri
-    env.add_jars(jar_path)
-
     env.set_parallelism(int(os.getenv("FLINK_PARALLELISM", "1")))
     
-    # Enable checkpointing for Restart Strategy (Failure Recovery)
+    # 1. Add all required JARs (Kafka, Iceberg, S3FileIO, SQLite JDBC, Shaded Hadoop)
+    jar_dir = os.path.join(os.getcwd(), "flink", "lib")
+    jars = [
+        os.path.join(jar_dir, "flink-sql-connector-kafka-3.1.0-1.18.jar"),
+        os.path.join(jar_dir, "flink-shaded-hadoop-2-uber-2.8.3-10.0.jar"),
+        os.path.join(jar_dir, "sqlite-jdbc-3.45.1.0.jar"),
+        os.path.join(jar_dir, "iceberg-flink-runtime-1.18-1.5.2.jar"),
+        os.path.join(jar_dir, "iceberg-aws-bundle-1.5.2.jar"),
+    ]
+    for jar in jars:
+        if os.path.exists(jar):
+            uri = f"file:///{jar.replace(chr(92), '/')}"
+            env.add_jars(uri)
+        else:
+            logger.warning(f"JAR not found: {jar}")
+
+    # 2. Enable checkpointing (10s interval) for Iceberg snapshot commits & failure recovery
     checkpoint_interval = int(os.getenv("FLINK_CHECKPOINT_INTERVAL", "10000"))
     env.enable_checkpointing(checkpoint_interval)
+    logger.info(f"Checkpointing enabled at {checkpoint_interval}ms interval")
+
+    # 3. Create Table Environment & Register Iceberg Catalog backed by Backblaze B2
+    t_env = StreamTableEnvironment.create(env)
     
+    catalog_name = os.getenv("ICEBERG_CATALOG_NAME", "ice_stream_catalog")
+    database_name = os.getenv("ICEBERG_DATABASE", "ice_stream")
+    bucket_name = os.getenv("B2_BUCKET_NAME", "ice-stream-lakehouse")
+    warehouse = os.getenv("ICEBERG_WAREHOUSE", f"s3://{bucket_name}/warehouse")
+    endpoint = os.getenv("B2_ENDPOINT", "https://s3.us-east-005.backblazeb2.com")
+    access_key = os.getenv("B2_ACCESS_KEY_ID")
+    secret_key = os.getenv("B2_SECRET_ACCESS_KEY")
+    region = os.getenv("B2_REGION", "us-east-005")
+    db_path = os.path.abspath(os.path.join(os.getcwd(), "data", "iceberg_catalog.db")).replace("\\", "/")
+
+    catalog_sql = f"""
+    CREATE CATALOG {catalog_name} WITH (
+        'type'='iceberg',
+        'catalog-impl'='org.apache.iceberg.jdbc.JdbcCatalog',
+        'uri'='jdbc:sqlite:{db_path}',
+        'warehouse'='{warehouse}',
+        'io-impl'='org.apache.iceberg.aws.s3.S3FileIO',
+        's3.endpoint'='{endpoint}',
+        's3.path-style-access'='true',
+        's3.access-key-id'='{access_key}',
+        's3.secret-access-key'='{secret_key}',
+        'client.region'='{region}'
+    )
+    """
+    try:
+        t_env.execute_sql(catalog_sql)
+        logger.info(f"Iceberg catalog '{catalog_name}' configured with warehouse '{warehouse}'")
+    except Exception as e:
+        logger.warning(f"Catalog registration note: {e}")
+    
+    # 4. Configure Kafka Source
     bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     topic = os.getenv("KAFKA_TOPIC_TRANSACTIONS", "ice-stream.transactions")
     security_protocol = os.getenv("KAFKA_SECURITY_PROTOCOL", "PLAINTEXT")
@@ -260,6 +396,7 @@ def main():
     good_stream = dedup_stream.filter(lambda x: json.loads(x)["is_valid"])
     bad_stream = dedup_stream.filter(lambda x: not json.loads(x)["is_valid"])
 
+    # 5. Logging & metrics hooks
     def log_good(x):
         d = json.loads(x)
         msg = f"[VALID STREAM] event_id={d.get('event_id')}"
@@ -290,6 +427,30 @@ def main():
         
     metrics_stream.map(log_metric, output_type=Types.STRING()).print()
 
+    # 6. Map to Iceberg Table Rows and attach to StatementSet
+    clean_row_type = Types.ROW_NAMED(
+        ["event_id", "transaction_id", "event_time", "customer_id", "product_id", "quantity", "unit_price", "currency", "status", "payment_method", "source", "schema_version", "metadata"],
+        [Types.STRING(), Types.STRING(), Types.SQL_TIMESTAMP(), Types.STRING(), Types.STRING(), Types.INT(), Types.BIG_DEC(), Types.STRING(), Types.STRING(), Types.STRING(), Types.STRING(), Types.STRING(), Types.STRING()]
+    )
+    clean_row_stream = good_stream.map(to_clean_iceberg_row, output_type=clean_row_type)
+    clean_tab = t_env.from_data_stream(clean_row_stream)
+
+    dlq_row_type = Types.ROW_NAMED(
+        ["event_id", "transaction_id", "event_time", "failure_timestamp", "failure_category", "failed_rules", "error_messages", "raw_payload", "schema_version", "source", "recoverable"],
+        [Types.STRING(), Types.STRING(), Types.SQL_TIMESTAMP(), Types.SQL_TIMESTAMP(), Types.STRING(), Types.BASIC_ARRAY(Types.STRING()), Types.BASIC_ARRAY(Types.STRING()), Types.STRING(), Types.STRING(), Types.STRING(), Types.BOOLEAN()]
+    )
+    dlq_row_stream = bad_stream.map(to_dlq_iceberg_row, output_type=dlq_row_type)
+    dlq_tab = t_env.from_data_stream(dlq_row_stream)
+
+    clean_table_target = f"{catalog_name}.{database_name}.transactions_clean"
+    dlq_table_target = f"{catalog_name}.{database_name}.transactions_dlq"
+
+    statement_set = t_env.create_statement_set()
+    statement_set.add_insert(clean_table_target, clean_tab)
+    statement_set.add_insert(dlq_table_target, dlq_tab)
+    statement_set.attach_as_datastream()
+    logger.info(f"Attached Iceberg sinks: '{clean_table_target}' and '{dlq_table_target}'")
+
     import threading
     import time
     
@@ -313,9 +474,10 @@ def main():
     tailer = threading.Thread(target=live_tail, daemon=True)
     tailer.start()
 
-    logger.info("Executing Flink Job...")
+    logger.info("Executing Flink Job with Iceberg Sinks...")
     env.execute("IceStream-Quality-Engine")
 
 if __name__ == '__main__':
     main()
+
 
