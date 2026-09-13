@@ -1,6 +1,8 @@
 """Domain models and Enums for Ice Stream Circuit Breaker & Observability (Master 6)."""
 
+from dataclasses import dataclass, field, asdict
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class CircuitState(str, Enum):
@@ -41,3 +43,76 @@ class PipelineState(str, Enum):
     TRIPPED = "TRIPPED"
     RECOVERING = "RECOVERING"
     FAILED = "FAILED"
+
+
+@dataclass
+class WindowMetrics:
+    """Metrics aggregated over an evaluation window (e.g., 10-second tumbling)."""
+    window_start: str
+    window_end: str
+    duration_seconds: float
+    processed_count: int
+    valid_count: int
+    invalid_count: int
+    error_rate: float
+    quality_score: float
+    throughput: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class Incident:
+    """Persistent operational incident record."""
+    incident_id: str
+    incident_type: IncidentType
+    severity: IncidentSeverity
+    status: IncidentStatus
+    created_at: str
+    updated_at: str
+    circuit_state: CircuitState
+    error_rate: float
+    threshold: float
+    processed_count: int
+    valid_count: int
+    invalid_count: int
+    window_start: str
+    window_end: str
+    reason: str
+    affected_component: str
+    recovery_attempts: int = 0
+    resolved_at: Optional[str] = None
+    resolution_reason: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = asdict(self)
+        d["incident_type"] = self.incident_type.value
+        d["severity"] = self.severity.value
+        d["status"] = self.status.value
+        d["circuit_state"] = self.circuit_state.value
+        return d
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Incident":
+        return cls(
+            incident_id=data["incident_id"],
+            incident_type=IncidentType(data["incident_type"]),
+            severity=IncidentSeverity(data["severity"]),
+            status=IncidentStatus(data["status"]),
+            created_at=data["created_at"],
+            updated_at=data["updated_at"],
+            circuit_state=CircuitState(data["circuit_state"]),
+            error_rate=float(data["error_rate"]),
+            threshold=float(data["threshold"]),
+            processed_count=int(data["processed_count"]),
+            valid_count=int(data["valid_count"]),
+            invalid_count=int(data["invalid_count"]),
+            window_start=data["window_start"],
+            window_end=data["window_end"],
+            reason=data["reason"],
+            affected_component=data["affected_component"],
+            recovery_attempts=int(data.get("recovery_attempts", 0)),
+            resolved_at=data.get("resolved_at"),
+            resolution_reason=data.get("resolution_reason"),
+        )
