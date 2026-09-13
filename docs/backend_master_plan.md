@@ -43,11 +43,13 @@ This aligns with the 20-step execution path but groups it into 7 primary Master 
 
 ---
 
-## MASTER 5
+## MASTER 5 (COMPLETED)
 **Flink → Iceberg + DLQ**
-- 9. Iceberg setup
-- 10. Flink → Iceberg (good data)
-- 11. DLQ/Quarantine (bad data)
+- [x] 9. Iceberg setup (Backblaze B2 S3FileIO + SQLite JDBC Catalog)
+- [x] 10. Flink → Iceberg (good data -> `transactions_clean`)
+- [x] 11. DLQ/Quarantine (bad data -> `transactions_dlq`)
+*Detailed Architecture & Verification Report: [`MASTER_5_ICEBERG_STORAGE.md`](MASTER_5_ICEBERG_STORAGE.md)*
+
 
 ---
 
