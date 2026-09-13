@@ -6,7 +6,7 @@ import { Server, Database, CheckCircle2, Clock, Cpu } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 export default function SystemPage() {
-  const { services, simulateTick, injectSchemaFailure, triggerRecovery, openCircuitBreaker } = useStore();
+  const { services, fetchInitialData, refreshLakehouse, triggerRecovery, circuitBreakerStatus } = useStore();
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 font-georgia">
@@ -16,15 +16,21 @@ export default function SystemPage() {
       </div>
 
       <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-card mb-8">
-        <span className="text-sm font-semibold mr-4">Simulation Controls:</span>
-        <Button size="sm" variant="outline" onClick={simulateTick}>Manual Tick</Button>
-        <Button size="sm" variant="danger" onClick={injectSchemaFailure}>Trigger Incident</Button>
-        <Button size="sm" variant="danger" onClick={openCircuitBreaker}>Open Circuit Breaker</Button>
-        <Button size="sm" variant="primary" onClick={triggerRecovery}>Trigger Recovery</Button>
+        <span className="text-sm font-semibold mr-4">Operational Controls:</span>
+        <Button size="sm" variant="outline" onClick={fetchInitialData}>Refresh Stream Telemetry</Button>
+        <Button size="sm" variant="outline" onClick={refreshLakehouse}>Sync Lakehouse Metadata</Button>
+        <Button 
+          size="sm" 
+          variant={circuitBreakerStatus === 'OPEN' ? 'danger' : 'outline'} 
+          disabled={circuitBreakerStatus !== 'OPEN'}
+          onClick={triggerRecovery}
+        >
+          Initiate Circuit Recovery (POST /api/recovery)
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
-        {services.map((svc) => (
+        {services.map((svc: any) => (
           <Card key={svc.id} className="relative overflow-hidden group hover:border-border/80 transition-colors">
             <div className="absolute top-0 left-0 w-full h-1 bg-status-active/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-start justify-between pb-2">
