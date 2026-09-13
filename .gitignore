@@ -81,4 +81,6 @@ dmypy.json
 # Local JDK and JAR artifacts
 .jdk/
 *.jar
+scratch/
+
 
