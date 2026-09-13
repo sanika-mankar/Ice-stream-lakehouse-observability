@@ -44,6 +44,7 @@ class WebSocketConnectionManager:
             await websocket.send_text(json.dumps({
                 "type": "initial_state",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "data": snapshot,
                 "payload": snapshot,
             }))
         except Exception as e:
