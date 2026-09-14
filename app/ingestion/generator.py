@@ -66,7 +66,7 @@ class TransactionGenerator:
         ]
 
         self.currencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY"]
-        self.payment_methods = ["CREDIT_CARD", "PAYPAL", "APPLE_PAY", "GOOGLE_PAY", "BANK_TRANSFER"]
+        self.payment_methods = ["CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "APPLEPAY", "UPI", "WALLET"]
         self.statuses = ["COMPLETED", "PENDING", "FAILED", "REFUNDED"]
 
     def _generate_valid_dict(self) -> dict[str, Any]:

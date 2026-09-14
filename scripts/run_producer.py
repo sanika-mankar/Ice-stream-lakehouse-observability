@@ -56,6 +56,7 @@ def main():
 
     sleep_time = 1.0 / events_per_second if events_per_second > 0 else 0
     events_generated_count = 0
+    buffered_events = []
     last_log_time = time.time()
 
     logger.info("Kafka connected. Starting generation loop...")
@@ -69,13 +70,32 @@ def main():
             producer.produce(event)
             events_generated_count += 1
             
-            # Log periodic throughput (every 5 seconds)
+            # Buffer for FastAPI dashboard bridge
+            buffered_events.append(event)
+            
+            # Log periodic throughput (every 5 seconds) and bridge to dashboard
             current_time = time.time()
             if current_time - last_log_time >= 5.0:
                 delivered = producer.metrics["delivered"]
                 failures = producer.metrics["failures"]
                 logger.info(f"Metrics - Generated: {events_generated_count} | Delivered: {delivered} | Failures: {failures}")
                 last_log_time = current_time
+
+                # Post buffered events to running FastAPI dashboard
+                if buffered_events:
+                    try:
+                        import urllib.request
+                        b_data = json.dumps({"events": buffered_events}).encode("utf-8")
+                        req = urllib.request.Request(
+                            "http://127.0.0.1:8000/api/ingest",
+                            data=b_data,
+                            headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(req, timeout=2) as resp:
+                            pass
+                    except Exception:
+                        pass
+                    buffered_events.clear()
                 
             # Check hard limit
             if 0 < max_events <= events_generated_count:

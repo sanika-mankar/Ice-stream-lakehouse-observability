@@ -50,7 +50,10 @@ class EnumValidator(Validator):
 
     ALLOWED_STATUSES = {"COMPLETED", "PENDING", "FAILED", "REFUNDED"}
     ALLOWED_CURRENCIES = {"USD", "EUR", "GBP", "INR", "AUD", "CAD", "JPY", "CNY"}
-    ALLOWED_PAYMENT_METHODS = {"CREDIT_CARD", "DEBIT_CARD", "UPI", "CARD", "NETBANKING", "WALLET", "PAYPAL", "APPLEPAY"}
+    ALLOWED_PAYMENT_METHODS = {
+        "CREDIT_CARD", "DEBIT_CARD", "UPI", "CARD", "NETBANKING",
+        "WALLET", "PAYPAL", "APPLEPAY", "APPLE_PAY", "GOOGLE_PAY", "BANK_TRANSFER"
+    }
 
     @property
     def rule_id(self) -> str:

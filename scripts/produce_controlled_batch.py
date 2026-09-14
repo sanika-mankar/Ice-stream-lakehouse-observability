@@ -175,6 +175,22 @@ def generate_controlled_batch():
 
     producer.close()
 
+    # Also bridge with running FastAPI dashboard if available
+    try:
+        import urllib.request
+        all_events = valid_events + invalid_events
+        data = json.dumps({"events": all_events}).encode("utf-8")
+        req = urllib.request.Request(
+            "http://127.0.0.1:8000/api/ingest",
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            if resp.status == 200:
+                print("  -> Synced batch with live FastAPI Observability Dashboard (/api/ingest)!")
+    except Exception as e:
+        print(f"  (Note: FastAPI bridge skipped or offline: {e})")
+
     print("\n--- Summary of Controlled Batch ---")
     print(f"Total Sent:       33")
     print(f"Valid Expected:   25 -> Routes to transactions_clean")

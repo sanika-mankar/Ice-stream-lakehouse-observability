@@ -90,11 +90,32 @@ class ObservabilityRepository:
             );
             """)
 
-            # 3. Operational indexes
+            # 3. quarantine_records table
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS quarantine_records (
+                id TEXT PRIMARY KEY,
+                event_id TEXT NOT NULL,
+                transaction_id TEXT,
+                rule_id TEXT NOT NULL,
+                field TEXT,
+                expected TEXT,
+                actual TEXT,
+                source TEXT,
+                schema_version TEXT,
+                severity TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                raw_payload TEXT,
+                error_details TEXT
+            );
+            """)
+
+            # 4. Operational indexes
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_incidents_created_at ON incidents(created_at);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_incidents_type ON incidents(incident_type);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_events_time ON pipeline_events(event_time);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quarantine_time ON quarantine_records(timestamp);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quarantine_rule ON quarantine_records(rule_id);")
 
             conn.commit()
 
@@ -200,3 +221,72 @@ class ObservabilityRepository:
             cursor.execute("SELECT * FROM pipeline_events ORDER BY event_time DESC LIMIT ?", (limit,))
             rows = cursor.fetchall()
             return [PipelineEvent.from_dict(dict(r)) for r in rows]
+
+    def save_quarantine_record(self, record: Dict[str, Any]) -> None:
+        """Inserts a quarantined violation record."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT OR REPLACE INTO quarantine_records (
+                id, event_id, transaction_id, rule_id, field, expected, actual,
+                source, schema_version, severity, timestamp, raw_payload, error_details
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                record.get("id"),
+                record.get("event_id") or record.get("eventId"),
+                record.get("transaction_id") or record.get("transactionId"),
+                record.get("rule_id") or record.get("ruleId"),
+                record.get("field"),
+                record.get("expected"),
+                record.get("actual"),
+                record.get("source"),
+                record.get("schema_version") or record.get("schemaVersion"),
+                record.get("severity", "critical"),
+                record.get("timestamp"),
+                json.dumps(record.get("raw_payload") or record.get("rawPayload")) if isinstance(record.get("raw_payload") or record.get("rawPayload"), (dict, list)) else record.get("raw_payload"),
+                json.dumps(record.get("error_details") or record.get("errorDetails")) if isinstance(record.get("error_details") or record.get("errorDetails"), (dict, list)) else record.get("error_details"),
+            ))
+            conn.commit()
+
+    def list_quarantine_records(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Returns recent quarantine records ordered by timestamp descending."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM quarantine_records ORDER BY timestamp DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            result = []
+            for r in rows:
+                item = dict(r)
+                # Map to both snake_case and camelCase for frontend compatibility
+                item["eventId"] = item["event_id"]
+                item["transactionId"] = item["transaction_id"]
+                item["ruleId"] = item["rule_id"]
+                item["schemaVersion"] = item["schema_version"]
+                item["rawPayload"] = item["raw_payload"]
+                item["errorDetails"] = item["error_details"]
+                result.append(item)
+            return result
+
+    def get_quarantine_record(self, record_id: str) -> Optional[Dict[str, Any]]:
+        """Fetches a single quarantine record by id."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM quarantine_records WHERE id = ? OR event_id = ?", (record_id, record_id))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            item = dict(row)
+            item["eventId"] = item["event_id"]
+            item["transactionId"] = item["transaction_id"]
+            item["ruleId"] = item["rule_id"]
+            item["schemaVersion"] = item["schema_version"]
+            item["rawPayload"] = item["raw_payload"]
+            item["errorDetails"] = item["error_details"]
+            return item
+
+    def clear_quarantine_records(self) -> None:
+        """Clears all quarantine records (for simulation reset)."""
+        with self._connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM quarantine_records")
+            conn.commit()

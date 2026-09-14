@@ -22,6 +22,8 @@ from app.api.routes.metrics import router as metrics_router
 from app.api.routes.pipeline import router as pipeline_router
 from app.api.routes.recovery import router as recovery_router
 from app.api.routes.system import router as system_router
+from app.api.routes.quarantine import router as quarantine_router
+from app.api.routes.simulation import router as simulation_router, ingest_router
 from app.api.websockets import router as ws_router, ws_manager
 from app.observability.service import get_observability_service
 
@@ -90,6 +92,9 @@ app.include_router(recovery_router, prefix="/api")
 app.include_router(pipeline_router, prefix="/api")
 app.include_router(lakehouse_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
+app.include_router(quarantine_router, prefix="/api")
+app.include_router(simulation_router, prefix="/api")
+app.include_router(ingest_router)
 
 # Mount WebSocket endpoint
 app.include_router(ws_router)
