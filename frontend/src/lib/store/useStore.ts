@@ -131,6 +131,7 @@ export interface AppState {
 
   // Actions
   fetchInitialData: () => Promise<void>;
+  fetchQuarantineRecords: () => Promise<void>;
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
   triggerRecovery: () => Promise<boolean>;
@@ -139,13 +140,14 @@ export interface AppState {
   refreshIncidents: () => Promise<void>;
   refreshLakehouse: () => Promise<void>;
 
-  // Safe stubs for compatibility
+  // Simulation & Generator Actions
   simulateTick: () => void;
-  injectWarning: () => void;
-  injectSchemaFailure: () => void;
-  openCircuitBreaker: () => void;
-  toggleSimulation: () => void;
-  injectDemoScenario: (scenario: string) => void;
+  injectWarning: () => Promise<void>;
+  injectSchemaFailure: () => Promise<void>;
+  openCircuitBreaker: () => Promise<void>;
+  toggleSimulation: () => Promise<void>;
+  resetSimulation: () => Promise<void>;
+  injectDemoScenario: (scenario: string) => Promise<void>;
 }
 
 const CANONICAL_RULES: QualityRule[] = [
@@ -308,13 +310,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   fetchInitialData: async () => {
     try {
-      const [health, metricsData, incidentList, lakehouseStatusData, snapshotsData, systemData] = await Promise.allSettled([
+      const [health, metricsData, incidentList, lakehouseStatusData, snapshotsData, systemData, quarantineData] = await Promise.allSettled([
         api.getHealth(),
         api.getMetrics(),
         api.getIncidents(undefined, 100),
         api.getLakehouseStatus(),
         api.getLakehouseSnapshots(),
-        api.getSystemInfo()
+        api.getSystemInfo(),
+        api.getQuarantineRecords({ limit: 100 }),
       ]);
 
       let circuitState: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
@@ -328,12 +331,12 @@ export const useStore = create<AppState>((set, get) => ({
       let m = get().metrics;
       if (metricsData.status === 'fulfilled') {
         const d = metricsData.value;
-        const total = d.processed_events_total || 0;
-        const valid = d.valid_events_total || 0;
-        const invalid = d.invalid_events_total || 0;
-        const errorRate = d.current_error_rate ? d.current_error_rate * 100 : (total > 0 ? (invalid / total) * 100 : 0);
-        const qualityScore = d.quality_score || Math.max(0, 100 - errorRate);
-        const throughput = d.throughput_events_per_second || 0;
+        const total = d.processed_events_total ?? 0;
+        const valid = d.valid_events_total ?? 0;
+        const invalid = d.invalid_events_total ?? 0;
+        const errorRate = d.current_error_rate !== undefined ? d.current_error_rate * 100 : (total > 0 ? (invalid / total) * 100 : 0);
+        const qualityScore = d.quality_score ?? Math.max(0, 100 - errorRate);
+        const throughput = d.throughput_events_per_second ?? 0;
 
         m = {
           ...m,
@@ -404,6 +407,21 @@ export const useStore = create<AppState>((set, get) => ({
         }));
       }
 
+      let qRecords: QuarantineRecord[] = [];
+      const ruleCounts: Record<string, number> = {};
+      if (quarantineData.status === 'fulfilled' && Array.isArray(quarantineData.value)) {
+        qRecords = quarantineData.value;
+        qRecords.forEach((r: any) => {
+          const rid = (r.rule_id || r.ruleId || '').toUpperCase();
+          ruleCounts[rid] = (ruleCounts[rid] || 0) + 1;
+        });
+      }
+
+      const updatedRules = CANONICAL_RULES.map((rule) => ({
+        ...rule,
+        violationCount: ruleCounts[rule.id] || 0,
+      }));
+
       set({
         connectionStatus: 'LIVE',
         status: pipelineHealth,
@@ -420,6 +438,8 @@ export const useStore = create<AppState>((set, get) => ({
         activeIncidents: incidentRecords.filter(i => i.status !== 'RESOLVED'),
         incidentHistory: incidentRecords,
         snapshots: snaps,
+        quarantineRecords: qRecords,
+        qualityRules: updatedRules,
         lakehouseStatus: lakehouseStatusData.status === 'fulfilled' ? lakehouseStatusData.value : null,
         system: systemData.status === 'fulfilled' ? systemData.value : null,
         lastUpdated: new Date().toISOString()
@@ -427,6 +447,27 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (err) {
       console.error('Failed to fetch initial data:', err);
       set({ connectionStatus: 'STALE' });
+    }
+  },
+
+  fetchQuarantineRecords: async () => {
+    try {
+      const records = await api.getQuarantineRecords({ limit: 100 });
+      const ruleCounts: Record<string, number> = {};
+      records.forEach((r: any) => {
+        const rid = (r.rule_id || r.ruleId || '').toUpperCase();
+        ruleCounts[rid] = (ruleCounts[rid] || 0) + 1;
+      });
+      const updatedRules = CANONICAL_RULES.map((rule) => ({
+        ...rule,
+        violationCount: ruleCounts[rule.id] || 0,
+      }));
+      set({
+        quarantineRecords: records,
+        qualityRules: updatedRules,
+      });
+    } catch (e) {
+      console.error('Failed to fetch quarantine records:', e);
     }
   },
 
@@ -458,14 +499,23 @@ export const useStore = create<AppState>((set, get) => ({
           const now = new Date().toISOString();
 
           if (msg.type === 'initial_state' || msg.type === 'metrics_update') {
-            const data = msg.data || {};
-            const total = data.processed_count || 0;
-            const valid = data.valid_count || 0;
-            const invalid = data.invalid_count || 0;
-            const errorRate = data.error_rate ? data.error_rate * 100 : (total > 0 ? (invalid / total) * 100 : 0);
-            const qualityScore = Math.max(0, 100 - errorRate);
-            const throughput = data.throughput || 0;
+            const data = msg.payload || msg.data || {};
+            const total = data.processed_events_total ?? data.processed_count ?? 0;
+            const valid = data.valid_events_total ?? data.valid_count ?? 0;
+            const invalid = data.invalid_events_total ?? data.invalid_count ?? 0;
+            const errorRate = data.current_error_rate !== undefined
+              ? data.current_error_rate * 100
+              : (data.error_rate !== undefined ? data.error_rate * 100 : (total > 0 ? (invalid / total) * 100 : 0));
+            const qualityScore = data.quality_score ?? Math.max(0, 100 - errorRate);
+            const throughput = data.throughput_events_per_second ?? data.throughput ?? 0;
             const circuit = (data.circuit_state as 'CLOSED' | 'OPEN' | 'HALF_OPEN') || get().circuitBreakerStatus;
+            const activeIncCount = data.active_incident_count ?? (Array.isArray(data.active_incidents) ? data.active_incidents.length : (circuit === 'OPEN' ? 1 : 0));
+
+            // If invalid count changed or > 0, refresh quarantine records and incidents
+            if (invalid > 0 && invalid !== get().metrics.invalidEvents) {
+              get().fetchQuarantineRecords();
+              get().refreshIncidents();
+            }
 
             set((state) => ({
               connectionStatus: 'LIVE',
@@ -483,7 +533,7 @@ export const useStore = create<AppState>((set, get) => ({
                 throughput,
                 eventsPerSec: throughput,
                 dlqRecords: invalid,
-                activeIncidents: circuit === 'OPEN' ? 1 : 0
+                activeIncidents: activeIncCount
               },
               quality: {
                 qualityScore,
@@ -669,27 +719,142 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  // Safe stubs to maintain backwards compatibility without fake data
+  // Real simulation engine actions connected to backend API
   simulateTick: () => {
     get().fetchInitialData();
   },
-  injectWarning: () => {
-    console.info('Load warning notification requested');
+
+  injectWarning: async () => {
+    try {
+      await api.produceSimulationBatch({ scenario: 'degradation', count: 30 });
+      await get().fetchInitialData();
+      await get().fetchQuarantineRecords();
+      set((state) => ({
+        activityFeed: [
+          { id: String(Date.now()), type: 'WARNING', message: 'Injected load warning: Elevated transaction throughput with sub-threshold violations', timestamp: new Date().toISOString() },
+          ...state.activityFeed.slice(0, 19)
+        ]
+      }));
+    } catch (e) {
+      console.error('injectWarning error:', e);
+    }
   },
-  injectSchemaFailure: () => {
-    console.info('Schema failure observation requested');
+
+  injectSchemaFailure: async () => {
+    try {
+      const res = await api.injectViolation('DQ-003', 2);
+      await get().fetchInitialData();
+      await get().fetchQuarantineRecords();
+      set((state) => ({
+        activityFeed: [
+          { id: String(Date.now()), type: 'CRITICAL', message: `Injected schema failure (DQ-003: INVALID_TYPE): Routed ${res.quarantined_count || 1} records to DLQ Quarantine`, timestamp: new Date().toISOString() },
+          ...state.activityFeed.slice(0, 19)
+        ]
+      }));
+    } catch (e) {
+      console.error('injectSchemaFailure error:', e);
+    }
   },
-  openCircuitBreaker: () => {
-    console.info('Circuit breaker test state requested');
+
+  openCircuitBreaker: async () => {
+    try {
+      const res = await api.injectViolation('BREAKER_TRIP', 5);
+      await get().fetchInitialData();
+      await get().fetchQuarantineRecords();
+      set((state) => ({
+        activityFeed: [
+          { id: String(Date.now()), type: 'CRITICAL', message: `Direct Circuit Breaker trip requested: Injected ${res.invalid} invalid transactions; Circuit state is now OPEN`, timestamp: new Date().toISOString() },
+          ...state.activityFeed.slice(0, 19)
+        ]
+      }));
+    } catch (e) {
+      console.error('openCircuitBreaker error:', e);
+    }
   },
-  toggleSimulation: () => {
-    set((s) => ({ isSimulationRunning: !s.isSimulationRunning }));
+
+  toggleSimulation: async () => {
+    const running = get().isSimulationRunning;
+    try {
+      if (running) {
+        await api.stopSimulationStream();
+        set((state) => ({
+          isSimulationRunning: false,
+          activityFeed: [
+            { id: String(Date.now()), type: 'INFO', message: 'Continuous simulation streamer paused', timestamp: new Date().toISOString() },
+            ...state.activityFeed.slice(0, 19)
+          ]
+        }));
+      } else {
+        await api.startSimulationStream(0.01);
+        set((state) => ({
+          isSimulationRunning: true,
+          activityFeed: [
+            { id: String(Date.now()), type: 'SUCCESS', message: 'Continuous streaming generator active: Producing live transactions at 5 events/sec', timestamp: new Date().toISOString() },
+            ...state.activityFeed.slice(0, 19)
+          ]
+        }));
+      }
+    } catch (e) {
+      console.error('toggleSimulation error:', e);
+      set((s) => ({ isSimulationRunning: !s.isSimulationRunning }));
+    }
   },
-  injectDemoScenario: (scenario: string) => {
-    if (scenario === 'recovery') {
-      get().triggerRecovery();
-    } else {
-      get().fetchInitialData();
+
+  resetSimulation: async () => {
+    try {
+      await api.resetSimulation();
+      await get().fetchInitialData();
+      await get().fetchQuarantineRecords();
+      set({
+        activityFeed: [
+          { id: String(Date.now()), type: 'SUCCESS', message: 'Simulation reset: All metrics cleared, circuit restored to CLOSED, quarantine emptied', timestamp: new Date().toISOString() }
+        ]
+      });
+    } catch (e) {
+      console.error('resetSimulation error:', e);
+    }
+  },
+
+  injectDemoScenario: async (scenario: string) => {
+    try {
+      if (scenario === 'recovery') {
+        await api.produceSimulationBatch({ scenario: 'recovery' });
+        await get().fetchInitialData();
+        await get().fetchQuarantineRecords();
+        set((state) => ({
+          activityFeed: [
+            { id: String(Date.now()), type: 'SUCCESS', message: 'Automated recovery executed: Probe batch verified clean; Circuit restored to CLOSED', timestamp: new Date().toISOString() },
+            ...state.activityFeed.slice(0, 19)
+          ]
+        }));
+      } else {
+        const res = await api.produceSimulationBatch({ scenario });
+        await get().fetchInitialData();
+        await get().fetchQuarantineRecords();
+
+        let message = '';
+        let type: 'INFO' | 'WARNING' | 'CRITICAL' | 'SUCCESS' = 'SUCCESS';
+
+        if (scenario === 'incident') {
+          message = `Critical failure scenario triggered: Error rate exceeded 2% threshold; Circuit Breaker TRIPPED to OPEN (${res.invalid} bad events quarantined)`;
+          type = 'CRITICAL';
+        } else if (scenario === 'degradation') {
+          message = `Degraded pipeline batch processed: Sub-threshold anomalies detected (${res.invalid} events quarantined, CB CLOSED)`;
+          type = 'WARNING';
+        } else {
+          message = `Healthy pipeline batch processed: ${res.processed} valid transactions passed all 8 DQ rules (0% error rate)`;
+          type = 'SUCCESS';
+        }
+
+        set((state) => ({
+          activityFeed: [
+            { id: String(Date.now()), type, message, timestamp: new Date().toISOString() },
+            ...state.activityFeed.slice(0, 19)
+          ]
+        }));
+      }
+    } catch (e) {
+      console.error('injectDemoScenario error:', e);
     }
   }
 }));

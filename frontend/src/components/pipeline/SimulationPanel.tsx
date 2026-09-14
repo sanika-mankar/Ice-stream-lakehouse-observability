@@ -8,8 +8,9 @@ export function SimulationPanel() {
     injectSchemaFailure, 
     openCircuitBreaker, 
     triggerRecovery,
-    isSimulationRunning,
-    toggleSimulation
+    isSimulationRunning, 
+    toggleSimulation,
+    resetSimulation
   } = useStore();
 
   return (
@@ -39,14 +40,17 @@ export function SimulationPanel() {
           Inject Load Warning
         </Button>
         <Button variant="outline" size="sm" className="w-full justify-start text-status-critical hover:text-status-critical hover:bg-status-critical/10" onClick={injectSchemaFailure}>
-          Inject Schema Failure
+          Inject Schema Failure (DQ-003)
         </Button>
         <Button variant="outline" size="sm" className="w-full justify-start text-status-critical hover:text-status-critical hover:bg-status-critical/10" onClick={openCircuitBreaker}>
-          Open Circuit Breaker
+          Open Circuit Breaker (&gt;2%)
         </Button>
         <div className="h-px bg-border my-1" />
         <Button variant="outline" size="sm" className="w-full justify-start text-status-active hover:text-status-active hover:bg-status-active/10" onClick={triggerRecovery}>
-          Trigger Recovery
+          Trigger Recovery (Probe)
+        </Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground hover:text-destructive text-xs" onClick={resetSimulation}>
+          Reset Pipeline State
         </Button>
       </CardContent>
     </Card>

@@ -122,4 +122,40 @@ export const api = {
   getLakehouseSnapshots: () => request<any[]>('/lakehouse/snapshots'),
 
   getSystemInfo: () => request<any>('/system'),
+
+  // Quarantine & DLQ
+  getQuarantineRecords: (params?: { limit?: number; rule_id?: string; search?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', String(params.limit));
+    if (params?.rule_id) query.append('rule_id', params.rule_id);
+    if (params?.search) query.append('search', params.search);
+    const qs = query.toString();
+    return request<any[]>(`/quarantine${qs ? `?${qs}` : ''}`);
+  },
+
+  getQuarantineRecord: (id: string) => request<any>(`/quarantine/${id}`),
+
+  clearQuarantine: () => request<any>('/quarantine', { method: 'DELETE' }),
+
+  // Simulation & Generator
+  produceSimulationBatch: (data: { count?: number; error_rate?: number; scenario?: string }) =>
+    request<any>('/simulation/produce', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  injectViolation: (rule_id: string, count = 1) =>
+    request<any>('/simulation/inject', {
+      method: 'POST',
+      body: JSON.stringify({ rule_id, count }),
+    }),
+
+  resetSimulation: () => request<any>('/simulation/reset', { method: 'POST' }),
+
+  startSimulationStream: (error_rate = 0.0) =>
+    request<any>(`/simulation/stream/start?error_rate=${error_rate}`, { method: 'POST' }),
+
+  stopSimulationStream: () => request<any>('/simulation/stream/stop', { method: 'POST' }),
+
+  getSimulationStreamStatus: () => request<{ running: boolean; error_rate: number }>('/simulation/stream/status'),
 };

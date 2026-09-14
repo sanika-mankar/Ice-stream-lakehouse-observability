@@ -28,10 +28,16 @@ export default function DashboardPage() {
         />
         <MetricCard
           title="Events Processed"
-          value={(metrics.eventsProcessed / 1000000).toFixed(2) + "M"}
+          value={
+            metrics.eventsProcessed >= 1000000
+              ? (metrics.eventsProcessed / 1000000).toFixed(2) + "M"
+              : metrics.eventsProcessed >= 1000
+              ? (metrics.eventsProcessed / 1000).toFixed(1) + "k"
+              : metrics.eventsProcessed.toLocaleString()
+          }
           icon={HardDrive}
           trend="up"
-          trendValue="+12% today"
+          trendValue="Real-time"
           statusColor="text-purple-500"
         />
         <MetricCard

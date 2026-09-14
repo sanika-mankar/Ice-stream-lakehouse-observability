@@ -7,27 +7,45 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { TrendingUp, TrendingDown, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export function QualityOverview() {
-  const { quality } = useStore();
+  const { quality, metrics, quarantineRecords } = useStore();
 
-  // Mock trend data for charts
-  const qualityTrend = Array.from({ length: 24 }).map((_, i) => ({
-    time: `${i}:00`,
-    score: 95 + Math.random() * 5,
-    errorRate: Math.random() * 2
+  // Dynamic quality trend data based on current score
+  const qualityTrend = Array.from({ length: 12 }).map((_, i) => {
+    const noise = (Math.sin(i) * 0.4);
+    const score = Math.min(100, Math.max(0, quality.qualityScore + noise));
+    return {
+      time: `${i * 2}:00`,
+      score: Number(score.toFixed(1)),
+      errorRate: Number(Math.max(0, 100 - score).toFixed(2)),
+    };
+  });
+
+  // Calculate dynamic violation categories from quarantineRecords
+  const violationCategories = React.useMemo(() => {
+    const counts = { Schema: 0, NullValue: 0, TypeMismatch: 0, RangeBounds: 0, EnumViolation: 0 };
+    quarantineRecords.forEach((r: any) => {
+      const rid = (r.ruleId || r.rule_id || '').toUpperCase();
+      if (rid === 'DQ-001' || rid === 'DQ-007' || rid === 'DQ-008') counts.Schema++;
+      else if (rid === 'DQ-002') counts.NullValue++;
+      else if (rid === 'DQ-003') counts.TypeMismatch++;
+      else if (rid === 'DQ-004') counts.RangeBounds++;
+      else counts.EnumViolation++;
+    });
+    return [
+      { name: 'Schema (DQ-1/7/8)', count: counts.Schema, fill: '#f59e0b' },
+      { name: 'Null Value (DQ-2)', count: counts.NullValue, fill: '#06b6d4' },
+      { name: 'Type Mismatch (DQ-3)', count: counts.TypeMismatch, fill: '#ef4444' },
+      { name: 'Range (DQ-4)', count: counts.RangeBounds, fill: '#8b5cf6' },
+    ];
+  }, [quarantineRecords]);
+
+  const recentViolations = quarantineRecords.slice(0, 5).map((r: any) => ({
+    id: r.id || r.eventId || 'V-01',
+    ruleId: r.ruleId || r.rule_id || 'DQ-001',
+    description: `Violation on field '${r.field || 'unknown'}': expected ${r.expected || 'valid'}, got ${r.actual || 'invalid'}`,
+    severity: (r.severity || 'critical').toUpperCase(),
+    timestamp: r.timestamp || new Date().toISOString(),
   }));
-
-  const violationCategories = [
-    { name: 'Schema', count: 845, fill: '#f59e0b' }, // amber-500
-    { name: 'Null Value', count: 420, fill: '#06b6d4' }, // cyan-500
-    { name: 'Type Mismatch', count: 180, fill: '#ef4444' }, // red-500
-    { name: 'Range Bounds', count: 55, fill: '#8b5cf6' }, // violet-500
-  ];
-
-  const recentViolations = [
-    { id: 'V-01', ruleId: 'DQ-001', description: 'Missing required field: transaction_id', severity: 'critical', timestamp: new Date().toISOString() },
-    { id: 'V-02', ruleId: 'DQ-003', description: 'Type mismatch on field: price (expected float)', severity: 'high', timestamp: new Date(Date.now() - 5000).toISOString() },
-    { id: 'V-03', ruleId: 'DQ-008', description: 'Enum violation on field: status', severity: 'medium', timestamp: new Date(Date.now() - 15000).toISOString() },
-  ];
 
   return (
     <div className="space-y-6">
@@ -87,8 +105,12 @@ export function QualityOverview() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-800">0.12%</div>
-            <div className="text-xs text-slate-500 mt-1 font-medium">Within 1.0% SLA threshold</div>
+            <div className={`text-3xl font-bold font-mono ${metrics.errorRate > 2 ? 'text-red-500' : 'text-slate-800'}`}>
+              {metrics.errorRate.toFixed(2)}%
+            </div>
+            <div className="text-xs text-slate-500 mt-1 font-medium">
+              {metrics.errorRate > 2 ? 'BREACH: Exceeds strict 2.0% threshold' : 'Within strict 2.0% threshold'}
+            </div>
           </CardContent>
         </Card>
       </div>
