@@ -302,7 +302,6 @@ npm run build
 ## 📖 Documentation Index
 
 - 📗 [Frontend Quickstart](docs/frontend-quickstart.md) — UI setup and developer guide.
-- 📙 [Architecture & System Design](docs/architecture.md) — Complete technical specification.
 - 📕 [Operational Runbook](docs/operations.md) — Production operations & playbook.
 - 📒 [Data Contract Specification](docs/data-contract.md) — Canonical schema and DQ rules.
 
