@@ -163,6 +163,8 @@ npm run build
 ---
 
 ## 5. Documentation
+- [Dual-Host Deployment Guide (Frontend on Vercel/Netlify + Backend on Render/Railway)](docs/deployment_guide.md)
+- [Frontend Quickstart](docs/frontend-quickstart.md)
 - [Architecture & Design](docs/architecture.md)
 - [Operational Runbook](docs/operations.md)
 - [Failure Modes & Recovery](docs/failure-recovery.md)
