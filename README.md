@@ -90,11 +90,15 @@ Ice Stream is an enterprise-ready, zero-cost streaming data-quality and lakehous
   - Persistent ACID transactions via SQLite `JdbcCatalog` (`data/iceberg_catalog.db`).
   - Time travel, partition pruning, and schema evolution.
 - **Production FastAPI Observability Layer**:
-  - REST API with `/api/health`, `/api/metrics`, `/api/pipeline/status`, `/api/incidents`, `/api/recovery`, `/api/lakehouse`, and `/api/system`.
-  - Real-time WebSocket feed (`/ws`) with live heartbeat and streaming updates.
+  - REST API with `/api/health`, `/api/metrics`, `/api/pipeline/status`, `/api/incidents`, `/api/recovery`, `/api/lakehouse`, `/api/quarantine`, `/api/simulation`, and `/api/contact`.
+  - Real-time WebSocket feed (`/ws`) with live heartbeat and streaming telemetry updates.
+- **Direct Operator Support & Dual-Lead Email Escalation**:
+  - Integrated `/console/contact-us` inquiry portal with authenticated Gmail SMTP SSL transport.
+  - Automatically dispatches operator communications concurrently to lead engineering inboxes (`Sant7124@gmail.com` and `sanikamankar74@gmail.com`).
 - **Interactive React Flow Console**:
-  - Live DAG topology rendering streaming node health and throughput.
-  - Incident management audit log with acknowledge and resolve workflows.
+  - Live DAG topology rendering streaming node health, throughput, and latency.
+  - Incident management audit log with acknowledge, inspect, and resolve workflows.
+  - One-click interactive simulation engine and DLQ quarantine inspector.
 
 ---
 
