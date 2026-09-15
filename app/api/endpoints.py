@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Path
 from typing import Dict, Any
 
 router = APIRouter()
@@ -101,6 +101,9 @@ import os
 import smtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
+from pathlib import Path as FilePath
+BASE_DIR = FilePath(__file__).resolve().parents[2]
+load_dotenv(BASE_DIR / "frontend" / ".env")
 
 load_dotenv()
 
@@ -114,13 +117,46 @@ class ContactRequest(BaseModel):
 
 @router.post("/contact")
 def submit_contact(contact: ContactRequest):
-    print("Contact form received:")
-    print("Name:", contact.name)
-    print("Email:", contact.email)
-    print("Subject:", contact.subject)
-    print("Message:", contact.message)
+    try:
+        email_user = os.getenv("EMAIL_USER")
+        email_password = os.getenv("EMAIL_PASSWORD")
+        santosh_email = os.getenv("SANTOSH_EMAIL")
+        copy_email = os.getenv("COPY_EMAIL")
 
-    return {
-        "success": True,
-        "message": "Contact message received successfully"
-    }
+        msg = EmailMessage()
+        msg["Subject"] = f"Ice Stream Contact: {contact.subject}"
+        msg["From"] = email_user
+        msg["To"] = santosh_email
+        msg["Cc"] = copy_email
+
+        msg.set_content(
+            f"""
+New message received from Ice Stream Contact Us page.
+
+Name: {contact.name}
+Email: {contact.email}
+Subject: {contact.subject}
+
+Message:
+{contact.message}
+"""
+        )
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            print("SMTP connected")
+            smtp.login(email_user, email_password)
+            print("SMTP login successful")
+            smtp.send_message(msg)
+            print("Email sent successfully")
+
+        return {
+            "success": True,
+            "message": "Message sent successfully"
+        }
+
+    except Exception as error:
+        print("Email Error:", error)
+        return {
+            "success": False,
+            "message": str(error)
+        }
