@@ -301,11 +301,9 @@ npm run build
 
 ## 📖 Documentation Index
 
-- 📘 [Dual-Host Deployment Guide](docs/deployment_guide.md) — Comprehensive guide for Vercel + Render hosting.
 - 📗 [Frontend Quickstart](docs/frontend-quickstart.md) — UI setup and developer guide.
 - 📙 [Architecture & System Design](docs/architecture.md) — Complete technical specification.
 - 📕 [Operational Runbook](docs/operations.md) — Production operations & playbook.
-- 📓 [Failure Modes & Recovery](docs/failure-recovery.md) — Fault tolerance & self-healing workflows.
 - 📒 [Data Contract Specification](docs/data-contract.md) — Canonical schema and DQ rules.
 
 <br/>
@@ -316,10 +314,10 @@ npm run build
 
 <div align="center">
 
-| **Sanika Mankar** | **Santosh Kumar** |
+| **Santosh Yadav** | **Sanika Mankar** |
 | :---: | :---: |
-| Lead Data & Observability Engineer | Lead Full-Stack & Infrastructure Engineer |
-| [@sanika-mankar](https://github.com/sanika-mankar) | [@Sant7124](https://github.com/Sant7124) |
+| Lead Data & Observability Engineer | Lead Frontend & Infrastructure Engineer |
+| [@Sant7124](https://github.com/Sant7124) | [@sanika-mankar](https://github.com/sanika-mankar) |
 
 </div>
 
