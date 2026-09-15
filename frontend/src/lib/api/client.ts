@@ -3,7 +3,11 @@
  * Connects directly to FastAPI backend without mock or simulated data.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+// Normalize backend URL: if provided, guarantee it routes to /api endpoint
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_BASE = rawApiUrl
+  ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`)
+  : '/api';
 
 export class ApiError extends Error {
   code?: string;

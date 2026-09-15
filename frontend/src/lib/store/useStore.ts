@@ -607,9 +607,21 @@ export const useStore = create<AppState>((set, get) => ({
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws`;
+    // Resolve WebSocket endpoint: explicit VITE_WS_URL > derived from VITE_API_URL > local window.location
+    let wsUrl = import.meta.env.VITE_WS_URL;
+    if (!wsUrl && import.meta.env.VITE_API_URL) {
+      const apiHost = (import.meta.env.VITE_API_URL as string)
+        .replace(/^https?:\/\//, '')
+        .replace(/\/api\/?$/, '')
+        .replace(/\/+$/, '');
+      const wsProto = (import.meta.env.VITE_API_URL as string).startsWith('https://') ? 'wss:' : 'ws:';
+      wsUrl = `${wsProto}//${apiHost}/ws`;
+    }
+    if (!wsUrl) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/ws`;
+    }
 
     try {
       wsInstance = new WebSocket(wsUrl);
