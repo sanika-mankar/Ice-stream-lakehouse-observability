@@ -69,10 +69,21 @@ allowed_origins = [
     "http://127.0.0.1:3000",
 ]
 
+# Allow custom production domains via ALLOWED_ORIGINS or CORS_ORIGINS
+env_origins = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS", "")
+is_wildcard = env_origins.strip() == "*"
+
+if env_origins and not is_wildcard:
+    for o in env_origins.split(","):
+        cleaned = o.strip()
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"] if is_wildcard else allowed_origins,
+    allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX", r"^https:\/\/.*\.vercel\.app$") if not is_wildcard else None,
+    allow_credentials=False if is_wildcard else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

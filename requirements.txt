@@ -1,29 +1,23 @@
-# Core dependencies
-streamlit>=1.28.0
-pandas>=2.0.0
+# =====================================================================
+# Ice Stream — Production Backend Dependencies
+# =====================================================================
+
+# FastAPI Web Server & REST / WebSocket Engine
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+websockets>=12.0
 pydantic>=2.0.0
 python-dotenv>=1.0.0
 
-# Development dependencies (install with: pip install -e ".[dev]")
-# pytest>=7.4.0
-# pytest-cov>=4.1.0
-# ruff>=0.1.0
-# mypy>=1.5.0
-# black>=23.9.0
-# isort>=5.12.0
-
-# Optional: Kafka support (install with: pip install ".[kafka]")
-# kafka-python>=2.0.2
-
-# Optional: Storage support (install with: pip install ".[storage]")
-# duckdb>=0.8.0
-# pyarrow>=13.0.0
-
-# Optional: Dashboard enhancements (install with: pip install ".[dashboard]")
-# plotly>=5.17.0
-# altair>=5.0.0
-# API Backend
-fastapi
-uvicorn
+# Data Processing & Storage (Lakehouse & Catalog)
+pandas>=2.0.0
+pyarrow>=13.0.0
+duckdb>=0.8.0
 boto3>=1.34.0
-pyarrow>=13.0.0
+
+# Streaming & Messaging (Kafka)
+confluent-kafka>=2.3.0
+kafka-python>=2.0.2
+
+# Email / Contact Us
+# (Uses Python built-in smtplib & email modules)
