@@ -1,7 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { 
   Activity, Database, GitCommit, LayoutDashboard, Settings, ShieldAlert, Workflow, Bell, Search,
-  LineChart, Cloud, Network, Shield, Mail
+  LineChart, Cloud, Network, Shield, Mail, LogOut
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useStore } from "../lib/store/useStore";
@@ -32,8 +32,17 @@ export default function DashboardLayout() {
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 border-r border-border bg-card flex flex-col">
-        <div className="flex h-14 items-center px-6 border-b border-border">
+        <div className="flex h-14 items-center px-4 border-b border-border">
           <div className="flex items-center gap-2">
+            <Link
+              id="exit-to-landing-btn"
+              to="/"
+              title="Exit to Landing Page"
+              aria-label="Exit to Landing Page"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors flex items-center justify-center cursor-pointer group"
+            >
+              <LogOut className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            </Link>
             <div className="w-6 h-6 rounded bg-status-active flex items-center justify-center">
               <span className="text-background font-bold text-xs">IS</span>
             </div>
