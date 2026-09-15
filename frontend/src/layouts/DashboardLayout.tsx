@@ -41,7 +41,7 @@ export default function DashboardLayout() {
               aria-label="Exit to Landing Page"
               className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors flex items-center justify-center cursor-pointer group"
             >
-              <LogOut className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+              <LogOut className="h-4 w-4 -scale-x-100 transition-transform group-hover:-translate-x-0.5" />
             </Link>
             <div className="w-6 h-6 rounded bg-status-active flex items-center justify-center">
               <span className="text-background font-bold text-xs">IS</span>
