@@ -282,8 +282,8 @@ const defaultEdges: Edge[] = [
     target: 'kafka', 
     targetHandle: 'top',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#0ea5e9' },
-    data: { state: 'HEALTHY' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#0284c7', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'Raw Ingest', semanticColor: '#0284c7' }
   },
   { 
     id: 'e-kafka-flink', 
@@ -292,8 +292,8 @@ const defaultEdges: Edge[] = [
     target: 'flink', 
     targetHandle: 'left',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
-    data: { state: 'HEALTHY', label: 'Stream Feed' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#7c3aed', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'Stream Feed', semanticColor: '#7c3aed' }
   },
   { 
     id: 'e-kafka-quality', 
@@ -302,8 +302,8 @@ const defaultEdges: Edge[] = [
     target: 'quality', 
     targetHandle: 'left',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' },
-    data: { state: 'HEALTHY', label: 'DQ Rules' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#d97706', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'DQ Rules', semanticColor: '#d97706' }
   },
   { 
     id: 'e-flink-circuit', 
@@ -312,8 +312,8 @@ const defaultEdges: Edge[] = [
     target: 'circuit', 
     targetHandle: 'left',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
-    data: { state: 'HEALTHY' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'Aggregated', semanticColor: '#8b5cf6' }
   },
   { 
     id: 'e-quality-circuit', 
@@ -322,8 +322,8 @@ const defaultEdges: Edge[] = [
     target: 'circuit', 
     targetHandle: 'left',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
-    data: { state: 'HEALTHY' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#059669', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'Validated', semanticColor: '#059669' }
   },
   { 
     id: 'e-circuit-clean', 
@@ -332,8 +332,8 @@ const defaultEdges: Edge[] = [
     target: 'clean_sink', 
     targetHandle: 'left',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
-    data: { state: 'HEALTHY', label: 'Valid (≤ 2%)' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'Valid (≤ 2%)', semanticColor: '#10b981' }
   },
   { 
     id: 'e-circuit-dlq', 
@@ -342,8 +342,8 @@ const defaultEdges: Edge[] = [
     target: 'dlq_sink', 
     targetHandle: 'left',
     type: 'custom',
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#f43f5e' },
-    data: { state: 'HEALTHY', label: 'Quarantine' }
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#e11d48', width: 18, height: 18 },
+    data: { state: 'HEALTHY', label: 'Quarantine (DLQ)', semanticColor: '#e11d48' }
   }
 ];
 
