@@ -1,6 +1,11 @@
 import { create } from 'zustand';
-import type { Node, Edge, OnNodesChange } from '@xyflow/react';
-import { applyNodeChanges } from '@xyflow/react';
+import { 
+  MarkerType,
+  applyNodeChanges, 
+  type Node, 
+  type Edge, 
+  type OnNodesChange 
+} from '@xyflow/react';
 import { api } from '../api/client';
 import type { 
   PipelineNodeData, 
@@ -270,13 +275,76 @@ const defaultNodes: Node<PipelineNodeData>[] = [
 ];
 
 const defaultEdges: Edge[] = [
-  { id: 'e-source-kafka', source: 'source', target: 'kafka', animated: true, style: { stroke: '#00f0ff', strokeWidth: 2 } },
-  { id: 'e-kafka-flink', source: 'kafka', target: 'flink', animated: true, style: { stroke: '#ff0055', strokeWidth: 2 } },
-  { id: 'e-kafka-quality', source: 'kafka', target: 'quality', animated: true, style: { stroke: '#ff0055', strokeWidth: 2 } },
-  { id: 'e-flink-circuit', source: 'flink', target: 'circuit', animated: true, style: { stroke: '#ffaa00', strokeWidth: 2 } },
-  { id: 'e-quality-circuit', source: 'quality', target: 'circuit', animated: true, style: { stroke: '#00ff66', strokeWidth: 2 } },
-  { id: 'e-circuit-clean', source: 'circuit', target: 'clean_sink', animated: true, style: { stroke: '#00ff66', strokeWidth: 2 } },
-  { id: 'e-circuit-dlq', source: 'circuit', target: 'dlq_sink', animated: false, style: { stroke: '#ff3344', strokeWidth: 2 } }
+  { 
+    id: 'e-source-kafka', 
+    source: 'source', 
+    sourceHandle: 'bottom',
+    target: 'kafka', 
+    targetHandle: 'top',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#0ea5e9' },
+    data: { state: 'HEALTHY' }
+  },
+  { 
+    id: 'e-kafka-flink', 
+    source: 'kafka', 
+    sourceHandle: 'right',
+    target: 'flink', 
+    targetHandle: 'left',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
+    data: { state: 'HEALTHY', label: 'Stream Feed' }
+  },
+  { 
+    id: 'e-kafka-quality', 
+    source: 'kafka', 
+    sourceHandle: 'right',
+    target: 'quality', 
+    targetHandle: 'left',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' },
+    data: { state: 'HEALTHY', label: 'DQ Rules' }
+  },
+  { 
+    id: 'e-flink-circuit', 
+    source: 'flink', 
+    sourceHandle: 'right',
+    target: 'circuit', 
+    targetHandle: 'left',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+    data: { state: 'HEALTHY' }
+  },
+  { 
+    id: 'e-quality-circuit', 
+    source: 'quality', 
+    sourceHandle: 'right',
+    target: 'circuit', 
+    targetHandle: 'left',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+    data: { state: 'HEALTHY' }
+  },
+  { 
+    id: 'e-circuit-clean', 
+    source: 'circuit', 
+    sourceHandle: 'right',
+    target: 'clean_sink', 
+    targetHandle: 'left',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
+    data: { state: 'HEALTHY', label: 'Valid (≤ 2%)' }
+  },
+  { 
+    id: 'e-circuit-dlq', 
+    source: 'circuit', 
+    sourceHandle: 'right',
+    target: 'dlq_sink', 
+    targetHandle: 'left',
+    type: 'custom',
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#f43f5e' },
+    data: { state: 'HEALTHY', label: 'Quarantine' }
+  }
 ];
 
 let wsInstance: WebSocket | null = null;
@@ -291,7 +359,7 @@ export const useStore = create<AppState>((set, get) => ({
   circuitBreakerThreshold: 2.0,
   recoveryAttempts: 0,
   circuitBreakerEvents: [
-    { state: 'CLOSED', time: new Date().toISOString(), reason: 'Initial healthy state â€” Error rate under 2.0%' }
+    { state: 'CLOSED', time: new Date().toISOString(), reason: 'Initial healthy state — Error rate under 2.0%' }
   ],
 
   metrics: {
