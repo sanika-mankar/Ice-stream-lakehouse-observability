@@ -118,13 +118,27 @@ When presenting Ice Stream to an evaluator, technical lead, or audience, follow 
 
 ---
 
+### Stage 8: Operational Support & Incident Communication (`/console/contact-us`)
+* **What to Show**:
+  - Direct operator inquiry portal with real-time feedback and SLA indicators.
+  - **Dual-Lead Routing**: Inquiries are routed concurrently via Gmail SMTP SSL to:
+    - Primary Lead: `Sant7124@gmail.com`
+    - Engineering Co-Lead: `sanikamankar74@gmail.com`
+  - Fill in a sample operational inquiry, click **"Send Message to Both Emails"**, and showcase the green **"Dispatched Successfully"** live notification.
+* **Talking Point**:
+  > *"Operational inquiries and platform incident escalations are dispatched simultaneously over authenticated SMTP SSL to both lead engineering inboxes with zero simulated stubs."*
+
+---
+
 ## 3. Checklist for Independent Checks (Before Every Demo)
 
 Before presenting, run through this quick 3-minute sanity checklist:
 
 1. [ ] **Backend Up**: Open `http://127.0.0.1:8000/api/health` ➔ returns `"status": "HEALTHY"`, `"circuit_state": "CLOSED"`.
 2. [ ] **Frontend Up**: Open `http://localhost:5173` ➔ landing page renders smoothly without console errors.
-3. [ ] **Console Navigation**: Click through each sidebar route (`/console/overview`, `/console/pipeline`, `/console/quality`, `/console/reliability`, `/console/lakehouse`, `/console/system`).
+3. [ ] **Console Navigation**: Click through each sidebar route (`/console/overview`, `/console/pipeline`, `/console/quality`, `/console/contact-us`, `/console/reliability`, `/console/lakehouse`, `/console/system`).
 4. [ ] **DAG Interaction**: In `/console/pipeline`, click on a node to ensure the drawer opens; test the "Architecture Blueprint" toggle.
-5. [ ] **Time Travel**: In `/console/lakehouse`, click "Compare Snapshots" to demonstrate comparison mode.
-6. [ ] **Clean DevTools**: Press `F12` in Chrome/Edge, ensure the Console tab has zero uncaught exceptions.
+5. [ ] **Contact Us Verification**: In `/console/contact-us`, confirm live recipient routing to `Sant7124@gmail.com` and `sanikamankar74@gmail.com`.
+6. [ ] **Time Travel**: In `/console/lakehouse`, click "Compare Snapshots" to demonstrate comparison mode.
+7. [ ] **Clean DevTools**: Press `F12` in Chrome/Edge, ensure the Console tab has zero uncaught exceptions.
+
