@@ -105,12 +105,20 @@ export default function PipelinePage() {
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             fitView
+            fitViewOptions={{
+              padding: 0.16,
+              minZoom: 0.65,
+              maxZoom: 1.1,
+            }}
+            minZoom={0.3}
+            maxZoom={2}
+            proOptions={{ hideAttribution: true }}
             onNodeClick={(_, node) => setSelectedNode(node.data as PipelineNodeData)}
             onPaneClick={() => setSelectedNode(null)}
-            className="bg-[#090d16]"
+            className="bg-[#faf9f5]"
           >
-            <Background color="#2a3346" gap={20} size={1.5} variant={BackgroundVariant.Dots} />
-            <Controls className="bg-card border border-border fill-foreground text-foreground" />
+            <Background color="#cbd5e1" gap={24} size={1.5} variant={BackgroundVariant.Dots} />
+            <Controls showInteractive={false} className="!bg-card/95 !backdrop-blur-md !border !border-border !shadow-sm !rounded-lg !overflow-hidden [&>button]:!border-b [&>button]:!border-border [&>button]:!bg-card [&>button]:!fill-foreground [&>button]:!text-foreground [&>button:hover]:!bg-muted" />
           </ReactFlow>
 
           {/* Node detail side panel on node click */}
