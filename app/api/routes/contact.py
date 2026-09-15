@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, EmailStr
 
 # Load environment variables from project root and frontend if present
@@ -21,6 +21,9 @@ logger = logging.getLogger("ice_stream.api.contact")
 
 router = APIRouter(tags=["Contact"])
 
+DEFAULT_SANTOSH_EMAIL = "Sant7124@gmail.com"
+DEFAULT_SANIKA_EMAIL = "sanikamankar74@gmail.com"
+
 
 class ContactRequest(BaseModel):
     name: str
@@ -31,55 +34,83 @@ class ContactRequest(BaseModel):
 
 @router.post("/contact", response_model=Dict[str, Any])
 def submit_contact(contact: ContactRequest):
-    """Handle contact submission and forward via SMTP email."""
+    """Handle contact submission and forward via SMTP email to both Santosh and Sanika."""
     try:
-        email_user = os.getenv("EMAIL_USER")
+        # Load credentials and recipients
+        email_user = os.getenv("EMAIL_USER") or os.getenv("SANTOSH_EMAIL") or DEFAULT_SANIKA_EMAIL
         email_password = os.getenv("EMAIL_PASSWORD")
-        santosh_email = os.getenv("SANTOSH_EMAIL", "sant781999@gmail.com")
-        copy_email = os.getenv("COPY_EMAIL")
+        santosh_email = os.getenv("SANTOSH_EMAIL", DEFAULT_SANTOSH_EMAIL)
+        copy_email = os.getenv("COPY_EMAIL", DEFAULT_SANIKA_EMAIL)
 
-        if not email_user or not email_password:
-            logger.warning("EMAIL_USER or EMAIL_PASSWORD not configured. Logging contact message locally.")
-            logger.info(f"Contact form submitted from {contact.name} ({contact.email}): {contact.subject} - {contact.message}")
+        recipients = list(dict.fromkeys([santosh_email, copy_email]))
+
+        if not email_password:
+            err_msg = (
+                "SMTP Authentication Error: 'EMAIL_PASSWORD' is not set in .env. "
+                "Gmail requires a 16-character Google App Password (not your personal password). "
+                "Please add EMAIL_USER and EMAIL_PASSWORD to your .env file."
+            )
+            logger.error(err_msg)
             return {
-                "success": True,
-                "message": "Message received successfully (local test mode: SMTP credentials not set)."
+                "success": False,
+                "message": err_msg,
+                "recipients": recipients
             }
 
         msg = EmailMessage()
-        msg["Subject"] = f"Ice Stream Contact: {contact.subject}"
+        msg["Subject"] = f"[Ice Stream Contact] {contact.subject}"
         msg["From"] = email_user
         msg["To"] = santosh_email
-        if copy_email:
-            msg["Cc"] = copy_email
+        msg["Cc"] = copy_email
+        msg["Reply-To"] = contact.email
 
         msg.set_content(
             f"""
-New message received from Ice Stream Contact Us page.
+New inquiry submitted via Ice Stream Contact Us portal:
 
-Name: {contact.name}
-Email: {contact.email}
-Subject: {contact.subject}
+--------------------------------------------------
+Sender Name:    {contact.name}
+Sender Email:   {contact.email}
+Subject:        {contact.subject}
+--------------------------------------------------
 
 Message:
 {contact.message}
+
+--------------------------------------------------
+This message was automatically forwarded to:
+- {santosh_email}
+- {copy_email}
 """
         )
 
+        logger.info(f"Dispatching contact email via smtp.gmail.com to {recipients}...")
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            logger.info("Connecting to SMTP...")
             smtp.login(email_user, email_password)
-            smtp.send_message(msg)
-            logger.info("Contact email sent successfully")
+            smtp.send_message(msg, to_addrs=recipients)
+            logger.info(f"Contact email successfully delivered to {recipients}")
 
         return {
             "success": True,
-            "message": "Message sent successfully"
+            "message": f"Message sent successfully to {santosh_email} and {copy_email}!",
+            "recipients": recipients
+        }
+
+    except smtplib.SMTPAuthenticationError as auth_err:
+        err_str = (
+            f"Gmail Authentication Failed: {auth_err}. "
+            "Please check that EMAIL_USER and EMAIL_PASSWORD in .env use a valid 16-character Google App Password."
+        )
+        logger.error(err_str)
+        return {
+            "success": False,
+            "message": err_str
         }
 
     except Exception as error:
-        logger.error(f"Email delivery failed: {error}", exc_info=True)
+        err_str = f"Email delivery failed: {str(error)}"
+        logger.error(err_str, exc_info=True)
         return {
             "success": False,
-            "message": str(error)
+            "message": err_str
         }
