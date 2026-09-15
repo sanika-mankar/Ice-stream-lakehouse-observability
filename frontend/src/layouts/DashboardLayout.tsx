@@ -74,46 +74,46 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="flex h-14 items-center gap-4 border-b border-border bg-card/50 backdrop-blur-sm px-6 sticky top-0 z-10">
-          <div className="flex items-center gap-2 mr-4">
+        <header className="flex h-14 items-center gap-3 border-b border-border bg-card/50 backdrop-blur-sm px-4 lg:px-6 sticky top-0 z-10">
+          <nav className="flex items-center gap-1 shrink-0">
             {CORE_ITEMS.map((item) => (
               <NavLink key={item.path} to={item.path} className={({ isActive }) => cn(
-                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
-                isActive ? "bg-slate-800 text-white" : "text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                isActive ? "bg-slate-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200/80 hover:text-slate-900"
               )}>
-                <item.icon className="h-4 w-4" />
-                {item.name}
+                <item.icon className="h-3.5 w-3.5 shrink-0" />
+                <span>{item.name}</span>
               </NavLink>
             ))}
-          </div>
+          </nav>
 
-          <div className="flex-1 flex items-center gap-4">
-            <div className="relative w-64 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex-1 flex items-center min-w-0 max-w-sm ml-2">
+            <div className="relative w-full">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <input 
                 type="text" 
                 placeholder="Search resources, nodes, alerts..." 
-                className="h-9 w-full rounded-md border border-input bg-transparent px-9 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-8 w-full rounded-md border border-input bg-transparent pl-8 pr-14 py-1 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
-              <div className="absolute right-2 top-2 text-[10px] font-mono border border-border px-1.5 rounded text-muted-foreground bg-muted/50">âŒ˜K</div>
+              <kbd className="absolute right-2 top-1.5 text-[10px] font-mono border border-border px-1.5 py-0.5 rounded text-muted-foreground bg-muted/60 select-none pointer-events-none">Ctrl+K</kbd>
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-sm">
-              <span className={cn("h-2 w-2 rounded-full animate-pulse", 
+          <div className="flex items-center gap-4 ml-auto shrink-0">
+            <div className="flex items-center gap-2 text-xs whitespace-nowrap shrink-0">
+              <span className={cn("h-2 w-2 rounded-full shrink-0 animate-pulse", 
                 status === 'HEALTHY' ? "bg-status-healthy" : 
                 status === 'CRITICAL' ? "bg-status-critical" : "bg-status-warning"
               )}></span>
-              <span className="font-medium text-muted-foreground hidden md:inline-block">
+              <span className="font-medium text-muted-foreground hidden sm:inline-block whitespace-nowrap">
                 {status === 'HEALTHY' ? 'All Systems Operational' : `System Status: ${status}`}
               </span>
             </div>
             
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-5 w-5" />
+            <button className="relative text-muted-foreground hover:text-foreground transition-colors p-1" title="Alerts">
+              <Bell className="h-4 w-4" />
               {metrics.activeIncidents > 0 && (
-                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-status-critical border-2 border-background" />
+                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-status-critical ring-2 ring-background" />
               )}
             </button>
           </div>
