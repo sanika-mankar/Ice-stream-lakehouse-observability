@@ -37,10 +37,12 @@ def submit_contact(contact: ContactRequest):
     """Handle contact submission and forward via SMTP email to both Santosh and Sanika."""
     try:
         # Load credentials and recipients
-        email_user = os.getenv("EMAIL_USER") or os.getenv("SANTOSH_EMAIL") or DEFAULT_SANIKA_EMAIL
+        email_user = (os.getenv("EMAIL_USER") or os.getenv("SANTOSH_EMAIL") or DEFAULT_SANIKA_EMAIL).strip('\"\' ')
         email_password = os.getenv("EMAIL_PASSWORD")
-        santosh_email = os.getenv("SANTOSH_EMAIL", DEFAULT_SANTOSH_EMAIL)
-        copy_email = os.getenv("COPY_EMAIL", DEFAULT_SANIKA_EMAIL)
+        if email_password:
+            email_password = email_password.replace(" ", "").strip('\"\' ')
+        santosh_email = (os.getenv("SANTOSH_EMAIL") or DEFAULT_SANTOSH_EMAIL).strip('\"\' ')
+        copy_email = (os.getenv("COPY_EMAIL") or DEFAULT_SANIKA_EMAIL).strip('\"\' ')
 
         recipients = list(dict.fromkeys([santosh_email, copy_email]))
 

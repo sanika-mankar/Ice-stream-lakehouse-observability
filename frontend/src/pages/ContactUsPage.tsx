@@ -271,6 +271,35 @@ export default function ContactUsPage() {
                 />
               </div>
 
+              {/* Feedback Notifications */}
+              {successMessage && (
+                <div className="flex items-start gap-3 rounded-lg border border-green-500/40 bg-green-500/10 p-3.5 animate-in fade-in">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-xs text-green-600 dark:text-green-400">
+                      Dispatched Successfully
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                      {successMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {errorMessage && (
+                <div className="flex items-start gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-3.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-xs text-red-600 dark:text-red-400">
+                      Delivery Notice
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                      {errorMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
