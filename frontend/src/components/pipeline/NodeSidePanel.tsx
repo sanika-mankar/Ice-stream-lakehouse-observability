@@ -12,7 +12,7 @@ interface NodeSidePanelProps {
 export function NodeSidePanel({ node, onClose }: NodeSidePanelProps) {
   return (
     <div className={cn(
-      "absolute right-0 top-0 h-full w-96 bg-card border-l border-border shadow-2xl transition-transform duration-300 z-50 flex flex-col",
+      "absolute right-0 top-0 h-full w-96 bg-card border-l border-border shadow-2xl transition-transform duration-300 z-20 flex flex-col",
       node ? "translate-x-0" : "translate-x-full"
     )}>
       {node && (
