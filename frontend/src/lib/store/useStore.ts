@@ -162,47 +162,110 @@ const CANONICAL_RULES: QualityRule[] = [
 ];
 
 const defaultNodes: Node<PipelineNodeData>[] = [
+  // Column 1: Ingestion Sources
   {
     id: 'source',
     type: 'custom',
-    position: { x: 50, y: 180 },
-    data: { id: 'source', type: 'source', label: 'Python Producer', description: 'Kafka streaming transactions', status: 'HEALTHY', metrics: { throughput: 0, latency: 12, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 40, y: 40 },
+    data: {
+      id: 'source',
+      label: 'Python Producer',
+      type: 'source',
+      status: 'HEALTHY',
+      description: 'Kafka streaming transaction generator',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 12, processed: 0, errorRate: 0, errors: 0 }
+    }
   },
   {
     id: 'kafka',
     type: 'custom',
-    position: { x: 380, y: 180 },
-    data: { id: 'kafka', type: 'kafka', label: 'Aiven Kafka', description: 'SASL_SSL events topic', status: 'HEALTHY', metrics: { throughput: 0, latency: 18, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 40, y: 300 },
+    data: {
+      id: 'kafka',
+      label: 'Aiven Kafka',
+      type: 'kafka',
+      status: 'HEALTHY',
+      description: 'SASL_SSL events topic broker',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 18, processed: 0, errorRate: 0, errors: 0 }
+    }
   },
+
+  // Column 2: Compute & Real-time Validation
   {
     id: 'flink',
     type: 'custom',
-    position: { x: 720, y: 70 },
-    data: { id: 'flink', type: 'flink', label: 'Apache Flink 1.18', description: '10s tumbling window stream engine', status: 'HEALTHY', metrics: { throughput: 0, latency: 24, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 420, y: 40 },
+    data: {
+      id: 'flink',
+      label: 'Apache Flink 1.18',
+      type: 'flink',
+      status: 'HEALTHY',
+      description: '10s tumbling window stream aggregation',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 24, processed: 0, errorRate: 0, errors: 0 }
+    }
   },
   {
     id: 'quality',
     type: 'custom',
-    position: { x: 720, y: 300 },
-    data: { id: 'quality', type: 'quality', label: 'Validation Engine', description: 'Rules DQ-001 through DQ-008', status: 'HEALTHY', metrics: { throughput: 0, latency: 15, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 420, y: 300 },
+    data: {
+      id: 'quality',
+      label: 'Validation Engine',
+      type: 'quality',
+      status: 'HEALTHY',
+      description: 'Rules DQ-001 through DQ-008 schema validation',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 15, processed: 0, errorRate: 0, errors: 0 }
+    }
   },
+
+  // Column 3: Circuit Breaker Gate
   {
     id: 'circuit',
     type: 'custom',
-    position: { x: 1060, y: 180 },
-    data: { id: 'circuit', type: 'analytics', label: 'Circuit Breaker', description: 'Strict 2% error threshold gate', status: 'HEALTHY', metrics: { throughput: 0, latency: 5, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 800, y: 170 },
+    data: {
+      id: 'circuit',
+      label: 'Circuit Breaker',
+      type: 'analytics',
+      status: 'HEALTHY',
+      description: 'Strict 2% error threshold gate',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 5, processed: 0, errorRate: 0, errors: 0 }
+    }
   },
+
+  // Column 4: Storage Sinks (Clean Lakehouse vs DLQ Quarantine)
   {
     id: 'clean_sink',
     type: 'custom',
-    position: { x: 1400, y: 70 },
-    data: { id: 'clean_sink', type: 'storage', label: 'Iceberg Clean Sink', description: 'Backblaze B2 S3FileIO + Parquet', status: 'HEALTHY', metrics: { throughput: 0, latency: 45, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 1180, y: 40 },
+    data: {
+      id: 'clean_sink',
+      label: 'Iceberg Clean Sink',
+      type: 'storage',
+      status: 'HEALTHY',
+      description: 'Backblaze B2 S3FileIO + Parquet lakehouse',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 45, processed: 0, errorRate: 0, errors: 0 }
+    }
   },
   {
     id: 'dlq_sink',
     type: 'custom',
-    position: { x: 1400, y: 300 },
-    data: { id: 'dlq_sink', type: 'dlq', label: 'Iceberg DLQ Sink', description: 'Backblaze B2 Quarantine Parquet', status: 'HEALTHY', metrics: { throughput: 0, latency: 40, errorRate: 0, processed: 0, errors: 0 }, lastActivity: 'Active' }
+    position: { x: 1180, y: 300 },
+    data: {
+      id: 'dlq_sink',
+      label: 'Iceberg DLQ Sink',
+      type: 'dlq',
+      status: 'HEALTHY',
+      description: 'Backblaze B2 Quarantine Parquet store',
+      lastActivity: new Date().toISOString(),
+      metrics: { throughput: 0, latency: 40, processed: 0, errorRate: 0, errors: 0 }
+    }
   }
 ];
 
@@ -228,7 +291,7 @@ export const useStore = create<AppState>((set, get) => ({
   circuitBreakerThreshold: 2.0,
   recoveryAttempts: 0,
   circuitBreakerEvents: [
-    { state: 'CLOSED', time: new Date().toISOString(), reason: 'Initial healthy state — Error rate under 2.0%' }
+    { state: 'CLOSED', time: new Date().toISOString(), reason: 'Initial healthy state â€” Error rate under 2.0%' }
   ],
 
   metrics: {
